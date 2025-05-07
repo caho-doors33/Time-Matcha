@@ -14,34 +14,31 @@ const initialDates = [
     id: 1,
     date: "2024-05-10",
     dayOfWeek: "金",
-    timeSlots: Array(24)
-      .fill(null)
-      .map((_, i) => ({
-        hour: i,
-        status: "none", // "available", "unavailable", "none"
-      })),
+    timeSlots: Array(48).fill(null).map((_, i) => ({
+      hour: Math.floor(i / 2),
+      minute: i % 2 === 0 ? 0 : 30,
+      status: "none",
+    })),
   },
   {
     id: 2,
     date: "2024-05-11",
     dayOfWeek: "土",
-    timeSlots: Array(24)
-      .fill(null)
-      .map((_, i) => ({
-        hour: i,
-        status: "none",
-      })),
+    timeSlots: Array(48).fill(null).map((_, i) => ({
+      hour: Math.floor(i / 2),
+      minute: i % 2 === 0 ? 0 : 30,
+      status: "none",
+    })),
   },
   {
     id: 3,
     date: "2024-05-12",
     dayOfWeek: "日",
-    timeSlots: Array(24)
-      .fill(null)
-      .map((_, i) => ({
-        hour: i,
-        status: "none",
-      })),
+    timeSlots: Array(48).fill(null).map((_, i) => ({
+      hour: Math.floor(i / 2),
+      minute: i % 2 === 0 ? 0 : 30,
+      status: "none",
+    })),
   },
 ]
 
@@ -169,47 +166,38 @@ export default function CalendarView() {
 
         {/* カレンダービュー */}
         <div className="space-y-6">
-          {dates.map((date) => (
-            <div key={date.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="bg-gray-100 p-3 border-b">
-                <div className="flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800">
-                    {date.date} ({date.dayOfWeek})
-                  </h2>
-                </div>
-              </div>
-              <div className="p-4">
-                <div className="flex flex-col">
-                  <div className="grid grid-cols-12 mb-2">
-                    {Array(12)
-                      .fill(null)
-                      .map((_, i) => (
-                        <div key={i} className="text-xs text-center text-gray-500">
-                          {i * 2}
-                        </div>
-                      ))}
-                  </div>
-                  <div className="h-12 relative">
-                    <div className="absolute inset-0 grid grid-cols-24 gap-0 border rounded">
-                      {date.timeSlots.map((slot) => (
-                        <div
-                          key={slot.hour}
-                          className={cn(
-                            "h-full cursor-pointer transition-colors border-r last:border-r-0",
-                            slot.status === "available" && "bg-emerald-400",
-                            slot.status === "unavailable" && "bg-red-400",
-                          )}
-                          onMouseDown={() => handleMouseDown(date.id, slot.hour)}
-                          onMouseEnter={() => handleMouseEnter(date.id, slot.hour)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+  {dates.map((date) => (
+    <div key={date.id} className="bg-white rounded-lg shadow-sm p-4">
+      <h2 className="font-semibold text-gray-800 mb-4">
+        {date.date} ({date.dayOfWeek})
+      </h2>
+      <div className="grid grid-cols-[80px_1fr] gap-2">
+        {date.timeSlots.map((slot) => (
+          <div
+            key={slot.hour}
+            className="flex items-center"
+            onMouseDown={() => handleMouseDown(date.id, slot.hour)}
+            onMouseEnter={() => handleMouseEnter(date.id, slot.hour)}
+          >
+            {/* 時間ラベル */}
+            <div className="text-sm text-gray-500 w-20">{`${String(slot.hour).padStart(2, '0')}:00`}</div>
+
+            {/* スロット */}
+            <div
+              className={cn(
+                "flex-1 h-6 rounded cursor-pointer transition-colors border",
+                slot.status === "available" && "bg-emerald-400",
+                slot.status === "unavailable" && "bg-red-400",
+                slot.status === "none" && "bg-gray-100 hover:bg-gray-200"
+              )}
+            ></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ))}
+</div>
+
 
         {/* 日付追加ボタン */}
         <div className="mt-6">
