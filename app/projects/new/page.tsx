@@ -1,10 +1,41 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
 
 export default function CreateProjectPage() {
+  const router = useRouter()
+  const [projectName, setProjectName] = useState("")
+  const [location, setLocation] = useState("")
+  const [deadline, setDeadline] = useState("")
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+     // 🔍 ここで送信内容を確認する
+  const payload = {
+  name: projectName,
+  location,
+  deadline,
+  dates: selectedDates, // ← ["5/8", "5/12"]
+  status: "adjusting",
+  user_id: null
+}
+
+
+  console.log("🟨 Supabase送信データ:", JSON.stringify(payload, null, 2))
+
+  const {error} = await supabase.from("projects").insert([payload])
+  if (error) {
+  alert("保存に失敗しました")
+  console.error("🟥 Supabaseエラー詳細:", JSON.stringify(error, null, 2)) // ← ここも大事！
+} else {
+  router.push("/projects")
+}
+
+  }
   // 選択された日付の状態
   const [selectedDates, setSelectedDates] = useState<string[]>(["5/8", "5/15"])
 
@@ -14,7 +45,7 @@ export default function CreateProjectPage() {
   }
 
   // 日付を追加する関数
-  const addDate = (date: string) => {
+  function addDate(date: string) {
     if (!selectedDates.includes(date)) {
       setSelectedDates([...selectedDates, date])
     }
@@ -68,7 +99,10 @@ export default function CreateProjectPage() {
         <h1 className="text-xl font-bold text-[#4A7856] mb-6 text-center">新規プロジェクト作成</h1>
 
         <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-          <form>
+          
+          
+
+          <form onSubmit = {handleSubmit}>
             {/* プロジェクト名 */}
             <div className="mb-6">
               <label htmlFor="projectName" className="block text-sm font-medium text-[#4A7856] mb-2">
@@ -77,6 +111,8 @@ export default function CreateProjectPage() {
               <input
                 type="text"
                 id="projectName"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
                 className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
                 placeholder="プロジェクト名を入力"
               />
@@ -91,6 +127,8 @@ export default function CreateProjectPage() {
                 <input
                   type="datetime-local"
                   id="deadline"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
                   className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -120,6 +158,8 @@ export default function CreateProjectPage() {
               <input
                 type="text"
                 id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
                 placeholder="場所を入力"
               />
