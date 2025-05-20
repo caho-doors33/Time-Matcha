@@ -12,7 +12,7 @@ export default function CreateProjectPage() {
   const [projectName, setProjectName] = useState("")
   const [location, setLocation] = useState("")
   const [deadline, setDeadline] = useState("")
-  const [selectedDates, setSelectedDates] = useState<string[]>(["5/8", "5/15"])
+  const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,6 +33,7 @@ export default function CreateProjectPage() {
       alert("保存に失敗しました")
       console.error("🟥 Supabaseエラー詳細:", JSON.stringify(error, null, 2))
     } else {
+      console.log("✅ 保存成功！ホームに遷移します")
       router.push("/projects")
     }
   }
@@ -78,14 +79,14 @@ export default function CreateProjectPage() {
   const month = currentDate.getMonth() + 1
 
   const addDate = (date: string) => {
-  if (!selectedDates.includes(date)) {
-    setSelectedDates([...selectedDates, date])
+    if (!selectedDates.includes(date)) {
+      setSelectedDates([...selectedDates, date])
+    }
   }
-}
 
-const removeDate = (date: string) => {
-  setSelectedDates(selectedDates.filter((d) => d !== date))
-}
+  const removeDate = (date: string) => {
+    setSelectedDates(selectedDates.filter((d) => d !== date))
+  }
 
 
   return (
@@ -113,10 +114,10 @@ const removeDate = (date: string) => {
         <h1 className="text-xl font-bold text-[#4A7856] mb-6 text-center">新規プロジェクト作成</h1>
 
         <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-          
-          
 
-          <form onSubmit = {handleSubmit}>
+
+
+          <form onSubmit={handleSubmit}>
             {/* プロジェクト名 */}
             <div className="mb-6">
               <label htmlFor="projectName" className="block text-sm font-medium text-[#4A7856] mb-2">
@@ -205,7 +206,7 @@ const removeDate = (date: string) => {
                     </svg>
                   </button>
                 </div>
-                    
+
                 <div className="grid grid-cols-7 gap-1 mb-2">
                   {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
                     <div key={index} className="h-8 w-8 flex items-center justify-center text-xs text-[#666666]">
@@ -217,24 +218,29 @@ const removeDate = (date: string) => {
                 <div className="grid grid-cols-7 gap-1">
                   {calendarDays.map((item, index) => {
                     const dateStr = `${month}/${item.day}`
-// month を2桁にしたいなら String(month).padStart(2, "0")
+                    // month を2桁にしたいなら String(month).padStart(2, "0")
 
                     const isSelected = item.isCurrentMonth && selectedDates.includes(dateStr)
-                    const isToday = item.day === 8 && item.isCurrentMonth // 仮の今日
+                    const today = new Date()
+                    const isToday =
+                      item.isCurrentMonth &&
+                      item.day === today.getDate() &&
+                      currentDate.getMonth() === today.getMonth() &&
+                      currentDate.getFullYear() === today.getFullYear()
+
 
                     return (
                       <div
                         key={`day-${index}`}
                         className={`h-8 w-8 flex items-center justify-center rounded-full cursor-pointer text-sm
-                        ${
-                          !item.isCurrentMonth
+                        ${!item.isCurrentMonth
                             ? "text-gray-300"
                             : isSelected
                               ? "bg-[#E85A71] text-white"
                               : isToday
                                 ? "border border-[#90C290] text-[#4A7856]"
                                 : "hover:bg-[#FFE5E5] text-[#333333]"
-                        }`}
+                          }`}
                         onClick={() => item.isCurrentMonth && (isSelected ? removeDate(dateStr) : addDate(dateStr))}
                       >
                         {item.day}

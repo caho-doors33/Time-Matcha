@@ -1,35 +1,34 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
+
 import Image from "next/image"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
 
 export default function HomePage() {
   // ダミープロジェクトデータ（ステータス情報を追加）
-  const projects = [
-    {
-      id: 1,
-      name: "社内会議の準備",
-      createdAt: "2025年5月1日",
-      status: "adjusting", // 予定調整中
-    },
-    {
-      id: 2,
-      name: "新商品発表会",
-      createdAt: "2025年5月3日",
-      status: "confirmed", // 予定確定済み
-    },
-    {
-      id: 3,
-      name: "週末の旅行計画",
-      createdAt: "2025年5月5日",
-      status: "adjusting", // 予定調整中
-    },
-    {
-      id: 4,
-      name: "誕生日パーティー",
-      createdAt: "2025年5月10日",
-      status: "confirmed", // 予定確定済み
-    },
-  ]
+  const [projects, setProjects] = useState<any[]>([])
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
+
+  useEffect(() => {
+  const fetchProjects = async () => {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: sortOrder === "oldest" })
+
+    if (error) {
+      console.error("取得エラー:", error)
+    } else {
+      setProjects(data)
+    }
+  }
+
+  fetchProjects()
+}, [sortOrder])
+
 
   return (
     <div className="min-h-screen bg-[#F8FFF8]">
@@ -37,7 +36,6 @@ export default function HomePage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Logo />
-
           <div className="flex items-center">
             <div className="text-right mr-3">
               <p className="text-sm font-medium text-[#333333]">まっちゃ</p>
@@ -53,6 +51,9 @@ export default function HomePage() {
               />
             </div>
           </div>
+
+
+
         </div>
       </header>
 
@@ -60,6 +61,14 @@ export default function HomePage() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-[#4A7856]">プロジェクト一覧</h2>
+          <div className="flex items-center space-x-2">           
+            <button
+              className="text-xs text-[#4A7856] bg-[#D4E9D7] hover:bg-[#90C290] py-1 px-2 rounded"
+              onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
+            >
+              並び順: {sortOrder === "newest" ? "新しい順" : "古い順"}
+            </button>
+          </div>
           <p className="text-sm text-[#666666]">合計: {projects.length}件</p>
         </div>
 
@@ -87,16 +96,18 @@ export default function HomePage() {
               {/* ステータス表示を追加 */}
               <div className="flex items-center mb-2">
                 <span
-                  className={`inline-block w-2 h-2 rounded-full mr-2 ${
-                    project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"
-                  }`}
+                  className={`inline-block w-2 h-2 rounded-full mr-2 ${project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"
+                    }`}
                 ></span>
                 <span className="text-xs text-[#666666]">
                   {project.status === "adjusting" ? "予定調整中" : "予定確定済み"}
                 </span>
               </div>
 
-              <p className="text-xs text-[#666666]">作成日: {project.createdAt}</p>
+              <p className="text-xs text-[#666666]">
+                作成日: {new Date(project.created_at).toLocaleDateString()}
+              </p>
+
             </div>
           ))}
         </div>
