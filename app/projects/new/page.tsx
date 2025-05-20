@@ -8,63 +8,64 @@ import { Logo } from "@/components/logo"
 
 export default function CreateProjectPage() {
   const router = useRouter()
+
   const [projectName, setProjectName] = useState("")
   const [location, setLocation] = useState("")
   const [deadline, setDeadline] = useState("")
-  
+  const [selectedDates, setSelectedDates] = useState<string[]>(["5/8", "5/15"])
+  const [currentDate, setCurrentDate] = useState(new Date())
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-     // 🔍 ここで送信内容を確認する
-  const payload = {
-  name: projectName,
-  location,
-  deadline,
-  dates: selectedDates, // ← ["5/8", "5/12"]
-  status: "adjusting",
-  user_id: null
-}
+    const payload = {
+      name: projectName,
+      location,
+      deadline,
+      dates: selectedDates,
+      status: "adjusting",
+      user_id: null
+    }
 
+    console.log("🟨 Supabase送信データ:", JSON.stringify(payload, null, 2))
 
-  console.log("🟨 Supabase送信データ:", JSON.stringify(payload, null, 2))
-
-  const {error} = await supabase.from("projects").insert([payload])
-  if (error) {
-  alert("保存に失敗しました")
-  console.error("🟥 Supabaseエラー詳細:", JSON.stringify(error, null, 2)) // ← ここも大事！
-} else {
-  router.push("/projects")
-}
-
-  }
-  // 選択された日付の状態
-  const [selectedDates, setSelectedDates] = useState<string[]>(["5/8", "5/15"])
-
-  // 日付を削除する関数
-  const removeDate = (date: string) => {
-    setSelectedDates(selectedDates.filter((d) => d !== date))
-  }
-
-  // 日付を追加する関数
-  function addDate(date: string) {
-    if (!selectedDates.includes(date)) {
-      setSelectedDates([...selectedDates, date])
+    const { error } = await supabase.from("projects").insert([payload])
+    if (error) {
+      alert("保存に失敗しました")
+      console.error("🟥 Supabaseエラー詳細:", JSON.stringify(error, null, 2))
+    } else {
+      router.push("/projects")
     }
   }
 
-  // 現在の月のカレンダーデータを生成
+  // 月移動
+  const goToPreviousMonth = () => {
+    const prev = new Date(currentDate)
+    prev.setMonth(prev.getMonth() - 1)
+    setCurrentDate(prev)
+  }
+
+  const goToNextMonth = () => {
+    const next = new Date(currentDate)
+    next.setMonth(next.getMonth() + 1)
+    setCurrentDate(next)
+  }
+
+  // カレンダー生成
   const generateCalendarDays = () => {
-    // 簡易的なカレンダーデータ（5月）
-    const daysInMonth = 31
-    const firstDayOfWeek = 3 // 水曜日から始まる（0が日曜）
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const firstDayOfWeek = firstDay.getDay()
 
     const days = []
 
-    // 前月の日を埋める
+    const prevMonthLastDay = new Date(year, month, 0).getDate()
     for (let i = 0; i < firstDayOfWeek; i++) {
-      days.push({ day: 30 - firstDayOfWeek + i + 1, isCurrentMonth: false })
+      days.push({ day: prevMonthLastDay - firstDayOfWeek + i + 1, isCurrentMonth: false })
     }
 
-    // 当月の日を埋める
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({ day: i, isCurrentMonth: true })
     }
@@ -73,6 +74,19 @@ export default function CreateProjectPage() {
   }
 
   const calendarDays = generateCalendarDays()
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth() + 1
+
+  const addDate = (date: string) => {
+  if (!selectedDates.includes(date)) {
+    setSelectedDates([...selectedDates, date])
+  }
+}
+
+const removeDate = (date: string) => {
+  setSelectedDates(selectedDates.filter((d) => d !== date))
+}
+
 
   return (
     <div className="min-h-screen bg-[#FFF9F9]">
@@ -172,31 +186,26 @@ export default function CreateProjectPage() {
               {/* カレンダーUI */}
               <div className="bg-[#F8FFF8] rounded-lg p-4 mb-4">
                 <div className="flex justify-between items-center mb-4">
-                  <button type="button" className="text-[#4A7856] hover:text-[#90C290] p-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                  {/* ◀ 前月ボタン */}
+                  <button type="button" onClick={goToPreviousMonth} className="text-[#4A7856] hover:text-[#90C290] p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
-                  <div className="font-medium text-[#4A7856]">2025年5月</div>
-                  <button type="button" className="text-[#4A7856] hover:text-[#90C290] p-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+
+                  {/* 表示中の年月 */}
+                  <div className="font-medium text-[#4A7856]">
+                    {year}年{month}月
+                  </div>
+
+                  {/* ▶ 次月ボタン */}
+                  <button type="button" onClick={goToNextMonth} className="text-[#4A7856] hover:text-[#90C290] p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
                 </div>
-
+                    
                 <div className="grid grid-cols-7 gap-1 mb-2">
                   {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
                     <div key={index} className="h-8 w-8 flex items-center justify-center text-xs text-[#666666]">
@@ -207,7 +216,9 @@ export default function CreateProjectPage() {
 
                 <div className="grid grid-cols-7 gap-1">
                   {calendarDays.map((item, index) => {
-                    const dateStr = `5/${item.day}`
+                    const dateStr = `${month}/${item.day}`
+// month を2桁にしたいなら String(month).padStart(2, "0")
+
                     const isSelected = item.isCurrentMonth && selectedDates.includes(dateStr)
                     const isToday = item.day === 8 && item.isCurrentMonth // 仮の今日
 
