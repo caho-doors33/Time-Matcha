@@ -7,27 +7,43 @@ import Image from "next/image"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
 
+import { deleteProjectById } from "@/lib/api";
+import { error } from "console"
+
 export default function HomePage() {
   // ダミープロジェクトデータ（ステータス情報を追加）
   const [projects, setProjects] = useState<any[]>([])
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
 
   useEffect(() => {
-  const fetchProjects = async () => {
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: sortOrder === "oldest" })
+    const fetchProjects = async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: sortOrder === "oldest" })
 
-    if (error) {
-      console.error("取得エラー:", error)
-    } else {
-      setProjects(data)
+      if (error) {
+        console.error("取得エラー:", error)
+      } else {
+        setProjects(data)
+      }
     }
-  }
 
-  fetchProjects()
-}, [sortOrder])
+    fetchProjects()
+  }, [sortOrder])
+
+  const handleDelete = async (id: string) => {
+    const confirmDelete = confirm("このプロジェクトを削除しますか？");
+    if (!confirmDelete) return;
+
+    try {
+      await deleteProjectById(id);
+      setProjects((prev) => prev.filter((p) => p.id! == id));
+    } catch (err) {
+      alert("削除に失敗しました:" + (err as Error).message);
+    }
+  };
+
 
 
   return (
@@ -60,8 +76,8 @@ export default function HomePage() {
       {/* メインコンテンツ */}
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-[#4A7856]">プロジェクト一覧</h2>
-          <div className="flex items-center space-x-2">           
+          <div className="flex items-center space-x-3">
+            <h2 className="text-2xl font-bold text-[#4A7856]">プロジェクト一覧</h2>
             <button
               className="text-xs text-[#4A7856] bg-[#D4E9D7] hover:bg-[#90C290] py-1 px-2 rounded"
               onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
@@ -87,7 +103,9 @@ export default function HomePage() {
                       編集
                     </button>
                   </Link>
-                  <button className="text-xs bg-[#FFE5E5] hover:bg-[#FF8FAB] text-[#E85A71] hover:text-white py-1 px-2 rounded transition-colors">
+                  <button className="text-xs bg-[#FFE5E5] hover:bg-[#FF8FAB] text-[#E85A71] hover:text-white py-1 px-2 rounded transition-colors"
+                    onClick={() => handleDelete(project.id)}
+                  >
                     削除
                   </button>
                 </div>
