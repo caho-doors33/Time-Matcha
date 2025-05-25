@@ -35,7 +35,7 @@ export default function TimeMatchaLanding() {
                     </Badge>
                     <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-6 leading-tight">
                         Let's Match Our Time<br />
-                        <span className="text-green-500">with Matcha</span>
+                        <span className="text-green-500">with Time Matcha</span>
                     </h1>
                     <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
                         友達やグループとのスケジュール調整を、抹茶のように心地よく、シンプルに。

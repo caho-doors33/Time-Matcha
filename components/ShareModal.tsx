@@ -13,7 +13,7 @@ export default function ShareModal({ projectId, onClose }: Props) {
     const router = useRouter()
     const url =
         typeof window !== "undefined"
-            ? `${window.location.origin}/project/${projectId}`
+            ? `${window.location.origin}/projects/${projectId}`
             : ""
 
     const [copied, setCopied] = useState(false)
