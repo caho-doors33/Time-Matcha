@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
+import { useEffect } from "react"
+import ShareModal from "@/components/ShareModal"
 
 export default function CreateProjectPage() {
   const router = useRouter()
@@ -14,10 +16,18 @@ export default function CreateProjectPage() {
   const [deadline, setDeadline] = useState("")
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
-  const userId = localStorage.getItem("userId")
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<{ name: string; avatar?: string } | null>(null)
 
-  const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}")
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null)
 
+  useEffect(() => {
+    const id = localStorage.getItem("userId")
+    const profile = localStorage.getItem("userProfile")
+    if (id) setUserId(id)
+    if (profile) setUserProfile(JSON.parse(profile))
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,18 +38,19 @@ export default function CreateProjectPage() {
       dates: selectedDates,
       status: "adjusting",
       user_id: userId,
-      user_name: userProfile.name, 
+      user_name: userProfile?.name,
     }
 
     console.log("🟨 Supabase送信データ:", JSON.stringify(payload, null, 2))
 
-    const { error } = await supabase.from("projects").insert([payload])
-    if (error) {
+    const { data, error } = await supabase.from("projects").insert([payload]).select().single()
+
+    if (error || !data) {
       alert("保存に失敗しました")
       console.error("🟥 Supabaseエラー詳細:", JSON.stringify(error, null, 2))
     } else {
-      console.log("✅ 保存成功！ホームに遷移します")
-      router.push("/home")
+      setCreatedProjectId(data.id) // ✅ ID保持
+      setIsModalOpen(true)         // ✅ モーダル表示
     }
   }
 
@@ -304,6 +315,13 @@ export default function CreateProjectPage() {
           </form>
         </div>
       </main>
-    </div>
+
+
+      {/* ✅ モーダルをここに移動 */}
+      {isModalOpen && createdProjectId && (
+        <ShareModal projectId={createdProjectId} onClose={() => setIsModalOpen(false)} />
+      )}
+
+    </div >
   )
 }
