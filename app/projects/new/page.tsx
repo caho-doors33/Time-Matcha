@@ -14,6 +14,10 @@ export default function CreateProjectPage() {
   const [deadline, setDeadline] = useState("")
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
+  const userId = localStorage.getItem("userId")
+
+  const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}")
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,7 +27,8 @@ export default function CreateProjectPage() {
       deadline,
       dates: selectedDates,
       status: "adjusting",
-      user_id: null
+      user_id: userId,
+      user_name: userProfile.name, 
     }
 
     console.log("🟨 Supabase送信データ:", JSON.stringify(payload, null, 2))
@@ -34,7 +39,7 @@ export default function CreateProjectPage() {
       console.error("🟥 Supabaseエラー詳細:", JSON.stringify(error, null, 2))
     } else {
       console.log("✅ 保存成功！ホームに遷移します")
-      router.push("/projects")
+      router.push("/home")
     }
   }
 

@@ -3,48 +3,84 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
-import Image from "next/image"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
 
-import { deleteProjectById } from "@/lib/api";
-import { error } from "console"
+import { deleteProjectById } from "@/lib/api"
 
 export default function HomePage() {
-  // ダミープロジェクトデータ（ステータス情報を追加）
   const [projects, setProjects] = useState<any[]>([])
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
+  const [userProfile, setUserProfile] = useState<{ name: string; avatar: string } | null>(null)
+
+  useEffect(() => {
+    const profile = localStorage.getItem("userProfile")
+    if (profile) setUserProfile(JSON.parse(profile))
+  }, [])
 
   useEffect(() => {
     const fetchProjects = async () => {
-      const { data, error } = await supabase
+      const userId = localStorage.getItem("userId")
+      if (!userId) return
+
+      // 自分が作成したプロジェクト
+      const { data: createdProjects, error: createdError } = await supabase
         .from("projects")
         .select("*")
-        .order("created_at", { ascending: sortOrder === "oldest" })
+        .eq("user_id", userId)
 
-      if (error) {
-        console.error("取得エラー:", error)
-      } else {
-        setProjects(data)
+      // 自分が回答したプロジェクトのIDリストを取得
+      const { data: answered, error: answerError } = await supabase
+        .from("answers")
+        .select("project_id")
+        .eq("user_id", userId)
+
+      if (createdError || answerError) {
+        console.error("取得エラー:", createdError || answerError)
+        return
       }
+
+      const answeredIds = answered?.map((a) => a.project_id) || []
+
+      // 回答したプロジェクトの詳細を取得
+      const { data: answeredProjects, error: answeredDetailError } = await supabase
+        .from("projects")
+        .select("*")
+        .in("id", answeredIds)
+
+      if (answeredDetailError) {
+        console.error("回答済みプロジェクト取得エラー:", answeredDetailError)
+        return
+      }
+
+      // 重複を排除して結合
+      const combined = [...(createdProjects || []), ...(answeredProjects || [])]
+      const uniqueProjects = Array.from(new Map(combined.map(p => [p.id, p])).values())
+
+      // 並び替え
+      const sorted = uniqueProjects.sort((a, b) => {
+        const aTime = new Date(a.created_at).getTime()
+        const bTime = new Date(b.created_at).getTime()
+        return sortOrder === "newest" ? bTime - aTime : aTime - bTime
+      })
+
+      setProjects(sorted)
     }
 
     fetchProjects()
   }, [sortOrder])
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = confirm("このプロジェクトを削除しますか？");
-    if (!confirmDelete) return;
+    const confirmDelete = confirm("このプロジェクトを削除しますか？")
+    if (!confirmDelete) return
 
     try {
-      await deleteProjectById(id);
-      setProjects((prev) => prev.filter((p) => p.id! == id));
+      await deleteProjectById(id)
+      setProjects((prev) => prev.filter((p) => p.id !== id))
     } catch (err) {
-      alert("削除に失敗しました:" + (err as Error).message);
+      alert("削除に失敗しました:" + (err as Error).message)
     }
-  };
-
-
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FFF8]">
@@ -54,22 +90,13 @@ export default function HomePage() {
           <Logo />
           <div className="flex items-center">
             <div className="text-right mr-3">
-              <p className="text-sm font-medium text-[#333333]">まっちゃ</p>
+              <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
               <p className="text-xs text-[#666666]">ログイン中</p>
             </div>
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#90C290]">
-              <Image
-                src="/placeholder-g1byb.png"
-                alt="ユーザーアイコン"
-                width={40}
-                height={40}
-                className="object-cover"
-              />
+            <div className="w-10 h-10 rounded-full border-2 border-[#90C290] flex items-center justify-center text-xl">
+              {userProfile?.avatar || "🙂"}
             </div>
           </div>
-
-
-
         </div>
       </header>
 
@@ -103,7 +130,8 @@ export default function HomePage() {
                       編集
                     </button>
                   </Link>
-                  <button className="text-xs bg-[#FFE5E5] hover:bg-[#FF8FAB] text-[#E85A71] hover:text-white py-1 px-2 rounded transition-colors"
+                  <button
+                    className="text-xs bg-[#FFE5E5] hover:bg-[#FF8FAB] text-[#E85A71] hover:text-white py-1 px-2 rounded transition-colors"
                     onClick={() => handleDelete(project.id)}
                   >
                     削除
@@ -111,11 +139,9 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* ステータス表示を追加 */}
               <div className="flex items-center mb-2">
                 <span
-                  className={`inline-block w-2 h-2 rounded-full mr-2 ${project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"
-                    }`}
+                  className={`inline-block w-2 h-2 rounded-full mr-2 ${project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"}`}
                 ></span>
                 <span className="text-xs text-[#666666]">
                   {project.status === "adjusting" ? "予定調整中" : "予定確定済み"}
@@ -125,7 +151,9 @@ export default function HomePage() {
               <p className="text-xs text-[#666666]">
                 作成日: {new Date(project.created_at).toLocaleDateString()}
               </p>
-
+              <p className="text-xs text-[#666666] mt-1">
+                作成者: {project.user_name || "不明"}
+              </p>
             </div>
           ))}
         </div>
