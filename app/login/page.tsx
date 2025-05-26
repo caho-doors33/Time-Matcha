@@ -1,13 +1,12 @@
+
 "use client"
 
 import { useEffect, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import { useParams } from 'next/navigation'
-
 
 type UserProfile = {
   name: string
@@ -19,29 +18,31 @@ export default function LoginPage() {
   const [avatar, setAvatar] = useState("😊")
   const [pickerOpen, setPickerOpen] = useState(false)
   const [savedProfile, setSavedProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
   const router = useRouter()
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
   const params = useParams()
-  const projectId = params?.id // URLが /project/[id] のとき
+  const projectId = params?.id
 
-  // userId の保存（初回のみ）
   useEffect(() => {
+    // 初回アクセス時、userIdがなければ生成
     if (!localStorage.getItem("userId")) {
       const newId = uuidv4()
       localStorage.setItem("userId", newId)
     }
 
-    // プロフィールが既にある場合は表示用に読み込み
     const saved = localStorage.getItem("userProfile")
     if (saved) {
       setSavedProfile(JSON.parse(saved))
     }
+
+    setIsLoading(false) // 読み込み完了
   }, [])
 
-  // 新規登録時の保存処理
   const handleRegister = () => {
     if (!name.trim() || !avatar.trim()) {
       alert("ユーザー名とアイコン（絵文字）を入力してください")
@@ -49,47 +50,19 @@ export default function LoginPage() {
     }
 
     const newProfile = { name, avatar }
-    localStorage.setItem("userProfile", JSON.stringify({ name, avatar }))
+    localStorage.setItem("userProfile", JSON.stringify(newProfile))
     setSavedProfile(newProfile)
     alert("プロフィールを保存しました！")
-    router.push('/home')// TODO: プロジェクト一覧に遷移してもOK
+    router.push("/home")
   }
 
-  // ログイン処理（再利用）
   const handleLogin = () => {
     alert("このアカウントでログインします！")
-    router.push('/home')// TODO: プロジェクト一覧ページなどに遷移
+    router.push("/home")
   }
 
-  const handleSave = async () => {
-    const userId = localStorage.getItem("userId")
-    const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}")
-    const availability = {
-      "5/8": ["10:00", "10:30"],
-      "5/15": ["11:00"]
-    }
-
-    const { error } = await supabase
-      .from("answers")
-      .upsert(
-        [
-          {
-            project_id: projectId,
-            user_id: userId,
-          }
-        ],
-        {
-          onConflict: 'project_id, user_id' // ← ✅ ここを文字列に！
-        }
-      )
-
-
-    if (error) {
-      console.error("保存エラー:", error.message)
-      alert("保存に失敗しました")
-    } else {
-      alert("保存完了！")
-    }
+  if (isLoading) {
+    return <div className="text-center text-[#4A7856] mt-20">読み込み中...</div>
   }
 
   return (
@@ -97,6 +70,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
         {savedProfile ? (
           <div className="text-center">
+            <div className = "flex flex-col gap-3">
             <p className="text-lg mb-4">
               {savedProfile.avatar} <span className="font-bold">{savedProfile.name}</span> さん、ようこそ！
             </p>
@@ -106,6 +80,23 @@ export default function LoginPage() {
             >
               このアカウントで続ける
             </button>
+            <button
+              onClick={() => {
+                const confirmReset = confirm(
+                  "別のアカウントを作成すると、これまでのデータ（ニックネーム・絵文字・回答履歴など）はすべて削除されます。本当によろしいですか？"
+                )
+                if (confirmReset) {
+                  localStorage.clear()
+                  setSavedProfile(null)
+                  setName("")
+                  setAvatar("😊")
+                }
+              }}
+              className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white py-2 px-4 rounded-md transition"
+            >
+              別のアカウントで始める
+            </button>
+            </div>
           </div>
         ) : (
           <>
@@ -150,7 +141,6 @@ export default function LoginPage() {
                 </div>
               )}
             </div>
-
 
             <button
               onClick={handleRegister}
