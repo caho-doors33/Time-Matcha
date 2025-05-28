@@ -13,7 +13,9 @@ export default function CreateProjectPage() {
 
   const [projectName, setProjectName] = useState("")
   const [location, setLocation] = useState("")
-  const [deadline, setDeadline] = useState("")
+  const [useDeadline, setUseDeadline] = useState<boolean>(false)
+  const [deadlineDate, setDeadlineDate] = useState("")
+  const [deadlineTime, setDeadlineTime] = useState("")
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
   const [userId, setUserId] = useState<string | null>(null)
@@ -31,10 +33,22 @@ export default function CreateProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // ✅ 必須バリデーション
+    if (!projectName.trim()) {
+      alert("プロジェクト名を入力してください")
+      return
+    }
+
+    if (selectedDates.length === 0) {
+      alert("スケジュール候補日を1つ以上選択してください")
+      return
+    }
+
     const payload = {
       name: projectName,
       location,
-      deadline,
+      deadline: formatDeadline(),
       dates: selectedDates,
       status: "adjusting",
       user_id: userId,
@@ -66,6 +80,7 @@ export default function CreateProjectPage() {
     next.setMonth(next.getMonth() + 1)
     setCurrentDate(next)
   }
+
 
   // カレンダー生成
   const generateCalendarDays = () => {
@@ -104,24 +119,54 @@ export default function CreateProjectPage() {
     setSelectedDates(selectedDates.filter((d) => d !== date))
   }
 
+  const formatDeadline = () => {
+    if (!useDeadline || !deadlineDate) return null
+    const time = deadlineTime?.match(/^\d{4}$/)
+      ? `${deadlineTime.slice(0, 2)}:${deadlineTime.slice(2)}`
+      : deadlineTime || "24:00"
+
+    return `${deadlineDate}T${time}`
+  }
+
 
   return (
     <div className="min-h-screen bg-[#FFF9F9]">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center">
-          <Link href="/home" className="text-[#4A7856] mr-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <Logo />
+      {/* トップバー */}
+      <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between relative">
+
+          <div className="flex items-center space-x-3">
+            <Link href="/home" className="text-[#4A7856] mr-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-10 sm:h-12 w-auto"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+
+            {/* ロゴ画像 */}
+            <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto" />
+            {/* テキストロゴ */}
+            <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide">
+              Time Matcha
+            </h1>
+          </div>
+
+
+          {/* ユーザー情報 */}
+          <div className="flex items-center">
+            <div className="text-right mr-3">
+              <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
+              <p className="text-xs text-[#666666]">ログイン中</p>
+            </div>
+            <div className="text-3xl sm:text-4xl leading-none">
+              {userProfile?.avatar || "🙂"}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -151,35 +196,39 @@ export default function CreateProjectPage() {
 
             {/* 締め切り */}
             <div className="mb-6">
-              <label htmlFor="deadline" className="block text-sm font-medium text-[#4A7856] mb-2">
-                締め切り
-              </label>
-              <div className="relative">
+              <label className="flex items-center space-x-2">
                 <input
-                  type="datetime-local"
-                  id="deadline"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
+                  type="checkbox"
+                  checked={useDeadline}
+                  onChange={() => setUseDeadline(!useDeadline)}
                 />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg
-                    className="w-5 h-5 text-[#90C290]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    ></path>
-                  </svg>
-                </div>
-              </div>
+                <span className="text-sm text-[#4A7856]">回答締め切りを設定する</span>
+              </label>
             </div>
+
+            {useDeadline && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-[#4A7856] mb-2">回答締め切り</label>
+                <div className="flex flex-col sm:flex-row sm:space-x-4">
+                  {/* 日付入力 */}
+                  <input
+                    type="date"
+                    value={deadlineDate}
+                    onChange={(e) => setDeadlineDate(e.target.value)}
+                    className="mb-2 sm:mb-0 px-4 py-2 border border-[#D4E9D7] rounded-md"
+                  />
+                  {/* 時間入力 */}
+                  <input
+                    type="text"
+                    placeholder="例: 0900 または 09:00"
+                    value={deadlineTime}
+                    onChange={(e) => setDeadlineTime(e.target.value)}
+                    className="px-4 py-2 border border-[#D4E9D7] rounded-md"
+                  />
+                </div>
+                <p className="text-xs text-[#666666] mt-1">未入力時は 24:00 に自動設定されます</p>
+              </div>
+            )}
 
             {/* 場所 */}
             <div className="mb-6">
@@ -312,15 +361,17 @@ export default function CreateProjectPage() {
                 プロジェクトを作成
               </button>
             </div>
-          </form>
-        </div>
-      </main>
+          </form >
+        </div >
+      </main >
 
 
       {/* ✅ モーダルをここに移動 */}
-      {isModalOpen && createdProjectId && (
-        <ShareModal projectId={createdProjectId} onClose={() => setIsModalOpen(false)} />
-      )}
+      {
+        isModalOpen && createdProjectId && (
+          <ShareModal projectId={createdProjectId} onClose={() => setIsModalOpen(false)} />
+        )
+      }
 
     </div >
   )

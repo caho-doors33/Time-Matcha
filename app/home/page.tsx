@@ -82,23 +82,43 @@ export default function HomePage() {
     }
   }
 
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const handleCopyLink = async (projectId: string) => {
+    const url = `${window.location.origin}/projects/${projectId}`
+    await navigator.clipboard.writeText(url)
+    setCopiedId(projectId)
+
+    setTimeout(() => setCopiedId(null), 2000) // 2秒で表示を戻す
+  }
   return (
     <div className="min-h-screen bg-[#F8FFF8]">
       {/* トップバー */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Logo />
+      <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between relative">
+
+          <div className="flex items-center space-x-3">
+            {/* ロゴ画像 */}
+            <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto" />
+            {/* テキストロゴ */}
+            <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide">
+              Time Matcha
+            </h1>
+          </div>
+
+
+          {/* ユーザー情報 */}
           <div className="flex items-center">
             <div className="text-right mr-3">
               <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
               <p className="text-xs text-[#666666]">ログイン中</p>
             </div>
-            <div className="w-10 h-10 rounded-full border-2 border-[#90C290] flex items-center justify-center text-xl">
+            <div className="text-3xl sm:text-4xl leading-none">
               {userProfile?.avatar || "🙂"}
             </div>
           </div>
         </div>
       </header>
+
 
       {/* メインコンテンツ */}
       <main className="max-w-5xl mx-auto px-4 py-8">
@@ -127,7 +147,7 @@ export default function HomePage() {
                 <div className="flex space-x-2">
                   <Link href={`/projects/${project.id}`}>
                     <button className="text-xs bg-[#D4E9D7] hover:bg-[#90C290] text-[#4A7856] hover:text-white py-1 px-2 rounded transition-colors">
-                      編集
+                      ✒️回答
                     </button>
                   </Link>
                   <button
@@ -136,7 +156,14 @@ export default function HomePage() {
                   >
                     削除
                   </button>
+                  <button
+                    onClick={() => handleCopyLink(project.id)}
+                    className="text-xs bg-[#FFF6E5] hover:bg-[#FFD580] text-[#AA8833] hover:text-white py-1 px-2 rounded transition-colors"
+                  >
+                    {copiedId === project.id ? "コピー済み" : "🔗共有"}
+                  </button>
                 </div>
+
               </div>
 
               <div className="flex items-center mb-2">
