@@ -26,13 +26,27 @@ export default function CreateProjectPage() {
 
   useEffect(() => {
     const id = localStorage.getItem("userId")
+    if(!id){
+      const newId = crypto.randomUUID()
+      localStorage.setItem("userId", newId)
+      setUserId(newId)
+    }else{
+      setUserId(id)
+    }
+
     const profile = localStorage.getItem("userProfile")
-    if (id) setUserId(id)
-    if (profile) setUserProfile(JSON.parse(profile))
+    if (profile) {
+      setUserProfile(JSON.parse(profile))
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!userId) {
+      alert("ユーザー情報の読み込み中です。少し待ってから再度お試しください。")
+      return
+    }
 
     // ✅ 必須バリデーション
     if (!projectName.trim()) {

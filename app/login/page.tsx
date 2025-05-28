@@ -52,12 +52,10 @@ export default function LoginPage() {
     const newProfile = { name, avatar }
     localStorage.setItem("userProfile", JSON.stringify(newProfile))
     setSavedProfile(newProfile)
-    alert("プロフィールを保存しました！")
     router.push("/home")
   }
 
   const handleLogin = () => {
-    alert("このアカウントでログインします！")
     router.push("/home")
   }
 
