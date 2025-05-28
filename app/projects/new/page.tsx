@@ -20,17 +20,18 @@ export default function CreateProjectPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [userId, setUserId] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<{ name: string; avatar?: string } | null>(null)
-
+  const [startTime, setStartTime] = useState("09:00")
+  const [endTime, setEndTime] = useState("21:30")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null)
 
   useEffect(() => {
     const id = localStorage.getItem("userId")
-    if(!id){
+    if (!id) {
       const newId = crypto.randomUUID()
       localStorage.setItem("userId", newId)
       setUserId(newId)
-    }else{
+    } else {
       setUserId(id)
     }
 
@@ -67,6 +68,8 @@ export default function CreateProjectPage() {
       status: "adjusting",
       user_id: userId,
       user_name: userProfile?.name,
+      start_time: startTime,
+      end_time: endTime,
     }
 
     console.log("🟨 Supabase送信データ:", JSON.stringify(payload, null, 2))
@@ -258,9 +261,38 @@ export default function CreateProjectPage() {
                 placeholder="場所を入力"
               />
             </div>
+            {/* 時間帯の説明文 */}
+            <p className="text-sm text-[#666666] mb-4">
+              ▼ 各日付に適用される時間帯を設定してください（例：各日付 09:00〜21:30 の間で日程調整します）
+            </p>
+
+            {/* 開始・終了時間の入力欄（横並び） */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-[#4A7856] mb-1">開始時間</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
+                />
+              </div>
+
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-[#4A7856] mb-1">終了時間</label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
+                />
+              </div>
+            </div>
+
+
 
             {/* スケジュール候補日 */}
-            <div className="mb-8">
+            <div className="mb-8 mt-6">
               <label className="block text-sm font-medium text-[#4A7856] mb-3">スケジュール候補日</label>
 
               {/* カレンダーUI */}

@@ -7,6 +7,8 @@ import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { useSearchParams } from "next/navigation"
+
 
 type UserProfile = {
   name: string
@@ -19,6 +21,10 @@ export default function LoginPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [savedProfile, setSavedProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect") || "/home"
+
 
   const router = useRouter()
   const supabase = createClient(
@@ -52,11 +58,11 @@ export default function LoginPage() {
     const newProfile = { name, avatar }
     localStorage.setItem("userProfile", JSON.stringify(newProfile))
     setSavedProfile(newProfile)
-    router.push("/home")
+    router.push(redirect)
   }
 
   const handleLogin = () => {
-    router.push("/home")
+    router.push(redirect)
   }
 
   if (isLoading) {
@@ -68,32 +74,32 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
         {savedProfile ? (
           <div className="text-center">
-            <div className = "flex flex-col gap-3">
-            <p className="text-lg mb-4">
-              {savedProfile.avatar} <span className="font-bold">{savedProfile.name}</span> さん、ようこそ！
-            </p>
-            <button
-              onClick={handleLogin}
-              className="bg-[#90C290] hover:bg-[#4A7856] text-white px-4 py-2 rounded transition"
-            >
-              このアカウントで続ける
-            </button>
-            <button
-              onClick={() => {
-                const confirmReset = confirm(
-                  "別のアカウントを作成すると、これまでのデータ（ニックネーム・絵文字・回答履歴など）はすべて削除されます。本当によろしいですか？"
-                )
-                if (confirmReset) {
-                  localStorage.clear()
-                  setSavedProfile(null)
-                  setName("")
-                  setAvatar("😊")
-                }
-              }}
-              className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white py-2 px-4 rounded-md transition"
-            >
-              別のアカウントで始める
-            </button>
+            <div className="flex flex-col gap-3">
+              <p className="text-lg mb-4">
+                {savedProfile.avatar} <span className="font-bold">{savedProfile.name}</span> さん、ようこそ！
+              </p>
+              <button
+                onClick={handleLogin}
+                className="bg-[#90C290] hover:bg-[#4A7856] text-white px-4 py-2 rounded transition"
+              >
+                このアカウントで続ける
+              </button>
+              <button
+                onClick={() => {
+                  const confirmReset = confirm(
+                    "別のアカウントを作成すると、これまでのデータ（ニックネーム・絵文字・回答履歴など）はすべて削除されます。本当によろしいですか？"
+                  )
+                  if (confirmReset) {
+                    localStorage.clear()
+                    setSavedProfile(null)
+                    setName("")
+                    setAvatar("😊")
+                  }
+                }}
+                className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white py-2 px-4 rounded-md transition"
+              >
+                別のアカウントで始める
+              </button>
             </div>
           </div>
         ) : (
