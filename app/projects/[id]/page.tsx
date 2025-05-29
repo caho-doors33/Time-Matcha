@@ -262,8 +262,15 @@ export default function ProjectPage() {
     }
 
     const { error } = await supabase.from("answers").upsert([
-      { project_id: projectId, user_id: userId, availability }
+      {
+        project_id: projectId,
+        user_id: userId,
+        availability,
+        name: userProfile?.name || "ゲスト",
+        avatar: userProfile?.avatar || "🌿"
+      }
     ], { onConflict: "project_id, user_id" })
+
 
     if (error) {
       console.error("保存エラー:", error.message)

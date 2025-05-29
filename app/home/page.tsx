@@ -172,9 +172,8 @@ export default function HomePage() {
                   作成者: {project.user_name || "不明"}
                 </p>
               </div>
-
               {/* 右：縦並びボタン */}
-              <div className="flex flex-col justify-between items-end min-h-[120px]">
+              <div className="flex flex-col justify-between items-end min-h-[150px] space-y-2">
                 <Link href={`/projects/${project.id}`}>
                   <button className="text-xs bg-[#D4E9D7] hover:bg-[#90C290] text-[#4A7856] hover:text-white py-1 px-2 rounded transition-colors">
                     ✒️回答
@@ -192,10 +191,17 @@ export default function HomePage() {
                 >
                   {copiedId === project.id ? "コピー済み" : "🔗共有"}
                 </button>
+                <Link href={`/dashboard/${project.id}`}>
+                  <button className="text-xs bg-[#E5F3FF] hover:bg-[#90BAE9] text-[#3171A3] hover:text-white py-1 px-2 rounded transition-colors">
+                    📊ダッシュボード
+                  </button>
+                </Link>
               </div>
+
+
             </div>
           ))}
-        </div>
+    </div>
 
         {/* 新規プロジェクト作成ボタン */}
         <div className="fixed bottom-6 right-6">
@@ -205,7 +211,7 @@ export default function HomePage() {
             </button>
           </Link>
         </div>
-      </main>
+      </main >
     </div >
   )
 }
