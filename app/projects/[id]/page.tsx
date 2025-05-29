@@ -282,7 +282,7 @@ export default function ProjectPage() {
     <div className="min-h-screen bg-[#F8FFF8] flex flex-col">
       {/* ヘッダー：戻るボタンとロゴ、保存ボタン */}
       <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between relative">
           <div className="flex items-center space-x-2 min-w-0">
             <Link href="/home" className="text-[#4A7856]">
               <svg
@@ -295,35 +295,38 @@ export default function ProjectPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <img src="/logo.png" alt="ロゴ" className="h-10 w-auto" />
-            <h1 className="text-lg font-bold text-[#4A7856] tracking-wide truncate">
+            <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto" />
+            <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide">
               Time Matcha
             </h1>
+
           </div>
 
           {/* ユーザー情報 */}
-          <div className="flex items-center space-x-2">
-            <div className="text-right">
-              <p className="text-sm font-medium text-[#333333] truncate">{userProfile?.name || "ゲスト"}</p>
+          <div className="flex items-center">
+            <div className="text-right mr-3">
+              <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
               <p className="text-xs text-[#666666]">ログイン中</p>
             </div>
-            <div className="text-2xl leading-none">
+            <div className="text-3xl sm:text-4xl leading-none">
               {userProfile?.avatar || "🙂"}
             </div>
           </div>
+
         </div>
       </header>
 
       {/* メインコンテンツ */}
       <main className="flex-1 overflow-y-auto max-w-full px-2 sm:px-4 py-4">
         <div className="max-w-full overflow-x-auto">
-          <div className="min-w-0 w-full">
+          <div className="w-full max-w-[960px] mx-auto">
             {/* 説明と入力モードボタン */}
             <div className="mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#4A7856] mb-1">スケジュール入力</h2>
               <h2 className="text-sm font-semibold text-[#333333] mb-1">
                 入力モードを選んで、参加可能な時間帯をドラッグで塗りましょう。
               </h2>
-              <p className="text-xs text-gray-600 mb-2">
+              <p className="text-sm font-semibold text-[#333333] mb-1">
                 下のボタンで入力モードを切り替えてから、時間帯のマスを指やマウスでなぞってください。
               </p>
               <div className="grid grid-cols-2 sm:flex flex-wrap justify-center gap-2">
@@ -332,7 +335,7 @@ export default function ProjectPage() {
                     key={mode}
                     onClick={() => setCurrentDragStatus(mode as any)}
                     className={`text-xs px-3 py-1 rounded-full border shadow-sm font-medium transition
-        ${currentDragStatus === mode
+                ${currentDragStatus === mode
                         ? "bg-[#4A7856] text-white border-[#4A7856]"
                         : "bg-white text-[#4A7856] border-[#4A7856] hover:bg-[#f0f8f4]"}`}
                   >
@@ -343,7 +346,6 @@ export default function ProjectPage() {
                   </button>
                 ))}
               </div>
-
             </div>
 
             {/* スケジュール入力エリア */}
@@ -431,6 +433,7 @@ export default function ProjectPage() {
           </div>
         </div>
       </main>
+
 
       {/* フッター：保存とダッシュボードボタン */}
       <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-2 px-2 flex flex-col sm:flex-row justify-center items-center gap-2">
