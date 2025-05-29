@@ -279,16 +279,15 @@ export default function ProjectPage() {
 
   // 表示部分のUI構成
   return (
-    <div className="min-h-screen bg-[#F8FFF8]">
+    <div className="min-h-screen bg-[#F8FFF8] flex flex-col">
       {/* ヘッダー：戻るボタンとロゴ、保存ボタン */}
       <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between relative">
-
-          <div className="flex items-center space-x-3">
-            <Link href="/home" className="text-[#4A7856] mr-3">
+        <div className="max-w-5xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center space-x-2 min-w-0">
+            <Link href="/home" className="text-[#4A7856]">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-10 sm:h-12 w-auto"
+                className="h-8 w-8"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -296,219 +295,159 @@ export default function ProjectPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-
-            {/* ロゴ画像 */}
-            <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto" />
-            {/* テキストロゴ */}
-            <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide">
+            <img src="/logo.png" alt="ロゴ" className="h-10 w-auto" />
+            <h1 className="text-lg font-bold text-[#4A7856] tracking-wide truncate">
               Time Matcha
             </h1>
           </div>
 
-
           {/* ユーザー情報 */}
-          <div className="flex items-center">
-            <div className="text-right mr-3">
-              <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
+          <div className="flex items-center space-x-2">
+            <div className="text-right">
+              <p className="text-sm font-medium text-[#333333] truncate">{userProfile?.name || "ゲスト"}</p>
               <p className="text-xs text-[#666666]">ログイン中</p>
             </div>
-            <div className="text-3xl sm:text-4xl leading-none">
+            <div className="text-2xl leading-none">
               {userProfile?.avatar || "🙂"}
             </div>
           </div>
         </div>
       </header>
 
-      {/* プロジェクトタイトルと説明 */}
-
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="overflow-x-auto pb-6">
-          <div className="min-w-[768px]">
-
-            <div className="top-0 z-30 backdrop-blur">
-              <div className="max-w-6xl mx-auto px-4 py-4">
-                <h2 className="text-base font-semibold text-[#333333] mb-2">
-                  入力モードを選んで、参加可能な時間帯をドラッグで塗りましょう。
-                </h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  下のボタンで入力モードを切り替えてから、時間帯のマスを指やマウスでなぞってください。
-                </p>
-
-                <div className="flex flex-wrap gap-3">
-                  {["available", "unavailable", "undecided", "none"].map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => setCurrentDragStatus(mode as "available" | "unavailable" | "undecided" | "none")}
-                      className={`px-5 py-2 rounded-full text-base font-medium transition border shadow-sm 
-            ${currentDragStatus === mode
-                          ? "bg-[#4A7856] text-white border-[#4A7856]"
-                          : "bg-white text-[#4A7856] border-[#4A7856] hover:bg-[#f0f8f4]"}
-          `}
-                    >
-                      {mode === "available" && "✅ 参加できる"}
-                      {mode === "unavailable" && "❌ 参加できない"}
-                      {mode === "undecided" && "❓ わからない"}
-                      {mode === "none" && "🚫 入力しない"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-
-
-            {/* 日付ヘッダーと全日選択ボタン群 */}
-            <div className="flex mb-2">
-              <div className="w-20 flex-shrink-0"></div>
-              {project.dates.map((date: string) => (
-                <div key={date} className="flex-1 px-1">
-                  <div className="flex flex-col items-center">
-                    {/* 日付ラベル */}
-                    <div className="bg-[#FFE5E5] text-[#E85A71] text-center py-2 rounded-t-lg font-medium w-full">{date}</div>
-
-                    {/* ◯ × △ チェックボックス */}
-                    <div className="flex gap-1 mt-2">
-                      {["available", "unavailable", "undecided"].map((status) => {
-                        const isSelected = fullDaySelection[date] === status
-                        const label = status === "available" ? "◯" : status === "unavailable" ? "×" : "△"
-                        const bgColor =
-                          status === "available" ? "bg-[#90C290]" :
-                            status === "unavailable" ? "bg-[#F3B3B3]" :
-                              "bg-[#FFFACD]"
-                        const textColor =
-                          status === "available" ? "text-white" :
-                            status === "unavailable" ? "text-white" :
-                              "text-[#666666]"
-
-                        return (
-                          <button
-                            key={status}
-                            type="button"
-                            onClick={() => {
-                              const newValue = isSelected ? "" : status
-                              setFullDaySelection((prev) => ({ ...prev, [date]: newValue }))
-
-                              const setFn =
-                                status === "available" ? setAvailableBlocks :
-                                  status === "unavailable" ? setUnavailableBlocks :
-                                    setUndecidedBlocks
-
-                              setFn((prev) => ({ ...prev, [date]: newValue ? timeSlots : [] }))
-
-                              if (status !== "available") setAvailableBlocks((prev) => ({ ...prev, [date]: [] }))
-                              if (status !== "unavailable") setUnavailableBlocks((prev) => ({ ...prev, [date]: [] }))
-                              if (status !== "undecided") setUndecidedBlocks((prev) => ({ ...prev, [date]: [] }))
-                            }}
-                            className={`w-10 h-10 text-lg font-bold rounded-full flex items-center justify-center shadow-sm transition 
-          ${isSelected ? bgColor : "bg-white"} 
-          ${isSelected ? textColor : "text-[#999] border border-[#CCC] hover:bg-[#f7f7f7]"}`}
-                          >
-                            {label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 時間ラベル列と入力マトリクス */}
-            <div className="flex">
-              {/* 左側：時間帯ラベル */}
-              <div className="w-20 flex-shrink-0 sticky left-0 z-10">
-                {timeSlots.map((time) => (
-                  <div
-                    key={time}
-                    className="h-12 flex items-center justify-end pr-2 text-sm font-semibold text-[#4A7856]"
+      {/* メインコンテンツ */}
+      <main className="flex-1 overflow-y-auto max-w-full px-2 sm:px-4 py-4">
+        <div className="max-w-full overflow-x-auto">
+          <div className="min-w-0 w-full">
+            {/* 説明と入力モードボタン */}
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-[#333333] mb-1">
+                入力モードを選んで、参加可能な時間帯をドラッグで塗りましょう。
+              </h2>
+              <p className="text-xs text-gray-600 mb-2">
+                下のボタンで入力モードを切り替えてから、時間帯のマスを指やマウスでなぞってください。
+              </p>
+              <div className="grid grid-cols-2 sm:flex flex-wrap justify-center gap-2">
+                {['available', 'unavailable', 'undecided', 'none'].map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setCurrentDragStatus(mode as any)}
+                    className={`text-xs px-3 py-1 rounded-full border shadow-sm font-medium transition
+        ${currentDragStatus === mode
+                        ? "bg-[#4A7856] text-white border-[#4A7856]"
+                        : "bg-white text-[#4A7856] border-[#4A7856] hover:bg-[#f0f8f4]"}`}
                   >
-                    {time}
+                    {mode === "available" && "✅ 参加できる"}
+                    {mode === "unavailable" && "❌ 参加できない"}
+                    {mode === "undecided" && "❓ わからない"}
+                    {mode === "none" && "🚫 入力しない"}
+                  </button>
+                ))}
+              </div>
+
+            </div>
+
+            {/* スケジュール入力エリア */}
+            <div className="overflow-x-auto">
+              <div className="flex text-xs">
+                <div className="w-14 flex-shrink-0"></div>
+                {project.dates.map((date: string) => (
+                  <div key={date} className="flex-1 px-0.5">
+                    <div className="flex flex-col items-center">
+                      <div className="bg-[#FFE5E5] text-[#E85A71] text-center py-1 rounded-t font-medium w-full text-xs">{date}</div>
+                      <div className="flex gap-0.5 mt-1">
+                        {["available", "unavailable", "undecided"].map((status) => {
+                          const isSelected = fullDaySelection[date] === status
+                          const label = status === "available" ? "◯" : status === "unavailable" ? "×" : "△"
+                          const bgColor = status === "available" ? "bg-[#90C290]" : status === "unavailable" ? "bg-[#F3B3B3]" : "bg-[#FFFACD]"
+                          const textColor = status !== "undecided" ? "text-white" : "text-[#666666]"
+                          return (
+                            <button
+                              key={status}
+                              onClick={() => handleFullDayChange(date, isSelected ? "" : status)}
+                              className={`w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm font-bold rounded-full flex items-center justify-center border border-[#CCC] ${isSelected ? bgColor : "bg-white"} ${isSelected ? textColor : "text-[#999]"}`}
+                            >
+                              {label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
 
-
-
-              {/* 各日付の時間ブロック入力欄 */}
-              {project.dates.map((date: string) => (
-                <div key={date} className="flex-1 px-1">
-                  <div className="bg-white rounded-b-lg shadow-sm">
-                    {timeSlots.map((time, index) => {
-                      const status = getBlockStatus(date, time)
-                      const backgroundClass =
-                        status === "available"
-                          ? "bg-[#90C290] text-white"
-                          : status === "unavailable"
-                            ? "bg-[#F3B3B3] text-white"
-                            : status === "undecided"
-                              ? "bg-[#FFFACD] text-[#666666]"
-                              : "bg-white"
-
-                      return (
-                        <div
-                          key={`${date}-${time}`}
-                          data-date={date}
-                          data-time={time}
-                          className={`h-12 border-b border-[#F0F0F0] cursor-pointer flex items-center justify-start pl-2 touch-manipulation select-none ${backgroundClass}`}
-                          onMouseDown={(e) => {
-                            if ((e.target as HTMLElement).tagName === "BUTTON") return
-                            if (!currentDragStatus) return
-                            setIsDragging(true)
-                            applyStatus(date, time, currentDragStatus)
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isDragging || !currentDragStatus) return
-                            applyStatus(date, time, currentDragStatus)
-                          }}
-                          onMouseUp={() => {
-                            setIsDragging(false)
-                          }}
-                          onTouchStart={(e) => {
-                            if (!currentDragStatus) return
-                            setIsDragging(true)
-                            applyStatus(date, time, currentDragStatus)
-                          }}
-                          onTouchMove={(e) => {
-                            const target = document.elementFromPoint(
-                              e.touches[0].clientX,
-                              e.touches[0].clientY
-                            ) as HTMLElement
-                            if (!isDragging || !currentDragStatus) return
-                            if (target?.dataset?.date && target?.dataset?.time) {
-                              applyStatus(target.dataset.date, target.dataset.time, currentDragStatus)
-                            }
-                          }}
-                          onTouchEnd={() => {
-                            setIsDragging(false)
-                          }}
-                        >
-                        </div>
-
-                      )
-                    })}
-                  </div>
+              <div className="flex">
+                <div className="w-14 flex-shrink-0">
+                  {timeSlots.map((time) => (
+                    <div key={time} className="h-8 flex items-center justify-end pr-1 text-[11px] text-[#4A7856]">
+                      {time}
+                    </div>
+                  ))}
                 </div>
-              ))}
-
+                {project.dates.map((date: string) => (
+                  <div key={date} className="flex-1 px-0.5">
+                    <div className="bg-white rounded-b shadow-sm">
+                      {timeSlots.map((time) => {
+                        const status = getBlockStatus(date, time)
+                        const backgroundClass = status === "available" ? "bg-[#90C290] text-white" : status === "unavailable" ? "bg-[#F3B3B3] text-white" : status === "undecided" ? "bg-[#FFFACD] text-[#666666]" : "bg-white"
+                        return (
+                          <div
+                            key={`${date}-${time}`}
+                            data-date={date}
+                            data-time={time}
+                            className={`h-8 border-b border-[#F0F0F0] flex items-center justify-start pl-1 text-[10px] ${backgroundClass}`}
+                            onMouseDown={(e) => {
+                              if ((e.target as HTMLElement).tagName === "BUTTON") return
+                              if (!currentDragStatus) return
+                              setIsDragging(true)
+                              applyStatus(date, time, currentDragStatus)
+                            }}
+                            onMouseEnter={() => {
+                              if (!isDragging || !currentDragStatus) return
+                              applyStatus(date, time, currentDragStatus)
+                            }}
+                            onMouseUp={() => setIsDragging(false)}
+                            onTouchStart={() => {
+                              if (!currentDragStatus) return
+                              setIsDragging(true)
+                              applyStatus(date, time, currentDragStatus)
+                            }}
+                            onTouchMove={(e) => {
+                              const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) as HTMLElement
+                              if (!isDragging || !currentDragStatus) return
+                              if (target?.dataset?.date && target?.dataset?.time) {
+                                applyStatus(target.dataset.date, target.dataset.time, currentDragStatus)
+                              }
+                            }}
+                            onTouchEnd={() => setIsDragging(false)}
+                          ></div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </main>
-      <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-4 px-4 flex justify-center gap-4">
+
+      {/* フッター：保存とダッシュボードボタン */}
+      <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-2 px-2 flex flex-col sm:flex-row justify-center items-center gap-2">
         <Link
           href={`/dashboard/${projectId}`}
-          className="text-base sm:text-lg font-semibold bg-white hover:bg-[#f0f8f4] text-[#4A7856] border border-[#4A7856] py-3 px-6 rounded-xl transition-colors"
+          className="w-full sm:w-auto text-sm sm:text-base font-semibold bg-white hover:bg-[#f0f8f4] text-[#4A7856] border border-[#4A7856] py-2 px-4 rounded-xl transition-colors text-center"
         >
           📊 ダッシュボードを見る
         </Link>
         <button
           onClick={handleSave}
-          className="text-base sm:text-lg font-semibold bg-[#4A7856] hover:bg-[#90C290] text-white py-3 px-6 rounded-xl transition-colors"
+          className="w-full sm:w-auto text-sm sm:text-base font-semibold bg-[#4A7856] hover:bg-[#90C290] text-white py-2 px-4 rounded-xl transition-colors"
         >
           ✅ 保存する
         </button>
       </div>
-
     </div>
-  )
+  );
+
 }
