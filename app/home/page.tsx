@@ -141,16 +141,40 @@ export default function HomePage() {
 
 
 
-      {/* プロジェクトリスト */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
-        {projects.map((project) => (
-          <div
-            key={project.id}
-            className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border-l-4 border-[#FFB7C5]"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-medium text-[#333333]">{project.name}</h3>
-              <div className="flex space-x-2">
+        {/* プロジェクトリスト */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
+          {projects.map((project) => (
+            <div
+              key={project.id}
+              className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border-l-4 border-[#FFB7C5] flex"
+            >
+              {/* 左：本文エリア */}
+              <div className="flex-1 pr-4">
+                <div className="mb-2">
+                  <h3 className="text-lg font-medium text-[#333333] break-words">
+                    {project.name}
+                  </h3>
+                </div>
+
+                <div className="flex items-center mb-2">
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full mr-2 ${project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"}`}
+                  ></span>
+                  <span className="text-xs text-[#666666]">
+                    {project.status === "adjusting" ? "予定調整中" : "予定確定済み"}
+                  </span>
+                </div>
+
+                <p className="text-xs text-[#666666]">
+                  作成日: {new Date(project.created_at).toLocaleDateString()}
+                </p>
+                <p className="text-xs text-[#666666] mt-1">
+                  作成者: {project.user_name || "不明"}
+                </p>
+              </div>
+
+              {/* 右：縦並びボタン */}
+              <div className="flex flex-col justify-between items-end min-h-[120px]">
                 <Link href={`/projects/${project.id}`}>
                   <button className="text-xs bg-[#D4E9D7] hover:bg-[#90C290] text-[#4A7856] hover:text-white py-1 px-2 rounded transition-colors">
                     ✒️回答
@@ -160,7 +184,7 @@ export default function HomePage() {
                   className="text-xs bg-[#FFE5E5] hover:bg-[#FF8FAB] text-[#E85A71] hover:text-white py-1 px-2 rounded transition-colors"
                   onClick={() => handleDelete(project.id)}
                 >
-                  削除
+                  🗑️削除
                 </button>
                 <button
                   onClick={() => handleCopyLink(project.id)}
@@ -169,37 +193,19 @@ export default function HomePage() {
                   {copiedId === project.id ? "コピー済み" : "🔗共有"}
                 </button>
               </div>
-
             </div>
+          ))}
+        </div>
 
-            <div className="flex items-center mb-2">
-              <span
-                className={`inline-block w-2 h-2 rounded-full mr-2 ${project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"}`}
-              ></span>
-              <span className="text-xs text-[#666666]">
-                {project.status === "adjusting" ? "予定調整中" : "予定確定済み"}
-              </span>
-            </div>
-
-            <p className="text-xs text-[#666666]">
-              作成日: {new Date(project.created_at).toLocaleDateString()}
-            </p>
-            <p className="text-xs text-[#666666] mt-1">
-              作成者: {project.user_name || "不明"}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* 新規プロジェクト作成ボタン */}
-      <div className="fixed bottom-6 right-6">
-        <Link href="/projects/new">
-          <button className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-colors">
-            <span className="text-2xl">+</span>
-          </button>
-        </Link>
-      </div>
-    </main>
+        {/* 新規プロジェクト作成ボタン */}
+        <div className="fixed bottom-6 right-6">
+          <Link href="/projects/new">
+            <button className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-colors">
+              <span className="text-2xl">+</span>
+            </button>
+          </Link>
+        </div>
+      </main>
     </div >
   )
 }

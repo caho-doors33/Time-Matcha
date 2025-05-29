@@ -97,6 +97,17 @@ export default function CreateProjectPage() {
     next.setMonth(next.getMonth() + 1)
     setCurrentDate(next)
   }
+  // 30分刻みの時刻リストを生成
+  const generateTimeOptions = () => {
+    const options: string[] = []
+    for (let h = 0; h < 24; h++) {
+      options.push(`${String(h).padStart(2, "0")}:00`)
+      options.push(`${String(h).padStart(2, "0")}:30`)
+    }
+    return options
+  }
+
+  const timeOptions = generateTimeOptions()
 
 
   // カレンダー生成
@@ -266,28 +277,38 @@ export default function CreateProjectPage() {
               ▼ 各日付に適用される時間帯を設定してください（例：各日付 09:00〜21:30 の間で日程調整します）
             </p>
 
-            {/* 開始・終了時間の入力欄（横並び） */}
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-[#4A7856] mb-1">開始時間</label>
-                <input
-                  type="time"
+                <select
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                   className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
-                />
+                >
+                  {timeOptions.map((time) => (
+                    <option key={`start-${time}`} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex-1">
                 <label className="block text-sm font-medium text-[#4A7856] mb-1">終了時間</label>
-                <input
-                  type="time"
+                <select
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                   className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md focus:outline-none focus:ring-2 focus:ring-[#90C290]"
-                />
+                >
+                  {timeOptions.map((time) => (
+                    <option key={`end-${time}`} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
+
 
 
 
