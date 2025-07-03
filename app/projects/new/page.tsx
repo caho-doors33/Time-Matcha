@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Logo } from "@/components/logo"
 import { useEffect } from "react"
 import ShareModal from "@/components/ShareModal"
+import Header from "@/components/header"
 
 export default function CreateProjectPage() {
   const router = useRouter()
@@ -160,43 +161,12 @@ export default function CreateProjectPage() {
   return (
     <div className="min-h-screen bg-[#FFF9F9]">
       {/* トップバー */}
-      <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between relative">
+      <Header
+        userName={userProfile?.name || "ゲスト"}
+        userAvatar={userProfile?.avatar}
+        showBackButton={true}
+      />
 
-          <div className="flex items-center space-x-3">
-            <Link href="/home" className="text-[#4A7856] mr-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-10 sm:h-12 w-auto"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-
-            {/* ロゴ画像 */}
-            <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto" />
-            {/* テキストロゴ */}
-            <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide">
-              Time Matcha
-            </h1>
-          </div>
-
-
-          {/* ユーザー情報 */}
-          <div className="flex items-center">
-            <div className="text-right mr-3">
-              <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
-              <p className="text-xs text-[#666666]">ログイン中</p>
-            </div>
-            <div className="text-3xl sm:text-4xl leading-none">
-              {userProfile?.avatar || "🙂"}
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* メインコンテンツ */}
       <main className="max-w-3xl mx-auto px-4 py-8">

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { Logo } from "@/components/logo"
 import Image from "next/image"
 import Link from "next/link"
+import Header from "@/components/header"
 
 export default function ConfirmationPage() {
     const router = useRouter()
@@ -176,39 +177,11 @@ export default function ConfirmationPage() {
 
     return (
         <div className="min-h-screen bg-[#FFF9F9]">
-            <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
-                <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between overflow-x-auto whitespace-nowrap">
-                    {/* 左側：ロゴ＋タイトル */}
-                    <div className="flex items-center space-x-2 min-w-0 overflow-hidden">
-                        <Link href="/home" className="text-[#4A7856] shrink-0">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-8 w-8"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </Link>
-                        <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto shrink-0" />
-                        <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide truncate">
-                            Time Matcha
-                        </h1>
-                    </div>
-
-                    {/* 右側：ユーザー情報 */}
-                    <div className="flex items-center shrink-0 ml-4">
-                        <div className="text-right mr-3">
-                            <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
-                            <p className="text-xs text-[#666666]">ログイン中</p>
-                        </div>
-                        <div className="text-3xl sm:text-4xl leading-none">{userProfile?.avatar || "🙂"}</div>
-                    </div>
-                </div>
-            </header>
-
-
+            <Header
+                userName={userProfile?.name || "ゲスト"}
+                userAvatar={userProfile?.avatar}
+                showBackButton={true}
+            />
 
             <main className="max-w-6xl mx-auto px-4 py-6 overflow-x-hidden">
                 <div className="min-h-screen bg-[#FFF9F9]">
@@ -293,75 +266,75 @@ export default function ConfirmationPage() {
 
                             </div>
                         ))}
-                </div>
+                    </div>
 
-                <div className="min-h-screen bg-[#FFF9F9] mt-8">
-                    <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                        <h2 className="text-xl font-bold text-[#E85A71] mb-4">最適な時間帯</h2>
-                        <div className="space-y-4">
-                            {project.dates.map((date: string) => {
-                                const isOpen = openDates[date] || false
-                                const times = optimalTimes[date] || []
+                    <div className="min-h-screen bg-[#FFF9F9] mt-8">
+                        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                            <h2 className="text-xl font-bold text-[#E85A71] mb-4">最適な時間帯</h2>
+                            <div className="space-y-4">
+                                {project.dates.map((date: string) => {
+                                    const isOpen = openDates[date] || false
+                                    const times = optimalTimes[date] || []
 
-                                return (
-                                    <div key={date} className="border rounded-md">
-                                        <button
-                                            onClick={() => setOpenDates(prev => ({ ...prev, [date]: !prev[date] }))}
-                                            className="w-full px-4 py-2 flex justify-between items-center bg-[#F8FFF8] text-left text-[#4A7856] font-medium"
-                                        >
-                                            <span>{date}</span>
-                                            <span className="text-sm">{isOpen ? "▲" : "▼"}</span>
-                                        </button>
+                                    return (
+                                        <div key={date} className="border rounded-md">
+                                            <button
+                                                onClick={() => setOpenDates(prev => ({ ...prev, [date]: !prev[date] }))}
+                                                className="w-full px-4 py-2 flex justify-between items-center bg-[#F8FFF8] text-left text-[#4A7856] font-medium"
+                                            >
+                                                <span>{date}</span>
+                                                <span className="text-sm">{isOpen ? "▲" : "▼"}</span>
+                                            </button>
 
-                                        {isOpen && (
-                                            <div className="px-4 py-2 space-y-2">
-                                                {times.length > 0 ? (
-                                                    <>
-                                                        {times.filter(item => item.count === users.length).map(item => (
-                                                            <div key={`optimal-${date}-${item.time}`} className="bg-[#D4E9D7] text-[#4A7856] px-4 py-2 rounded-md flex justify-between items-center">
-                                                                <div className="font-medium">{item.time}</div>
-                                                                <div className="text-sm">全員参加可能</div>
-                                                            </div>
-                                                        ))}
-                                                        {times.filter(item => item.count < users.length && item.count > users.length / 2).map(item => (
-                                                            <div key={`optimal-${date}-${item.time}`} className="bg-[#FFE5E5] text-[#E85A71] px-4 py-2 rounded-md flex justify-between items-center">
-                                                                <div className="font-medium">{item.time}</div>
-                                                                <div className="text-sm">{item.count}人参加可能</div>
-                                                            </div>
-                                                        ))}
-                                                    </>
-                                                ) : (
-                                                    <p className="text-[#666666]">この日は全員の予定が合う時間がありません。</p>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                                            {isOpen && (
+                                                <div className="px-4 py-2 space-y-2">
+                                                    {times.length > 0 ? (
+                                                        <>
+                                                            {times.filter(item => item.count === users.length).map(item => (
+                                                                <div key={`optimal-${date}-${item.time}`} className="bg-[#D4E9D7] text-[#4A7856] px-4 py-2 rounded-md flex justify-between items-center">
+                                                                    <div className="font-medium">{item.time}</div>
+                                                                    <div className="text-sm">全員参加可能</div>
+                                                                </div>
+                                                            ))}
+                                                            {times.filter(item => item.count < users.length && item.count > users.length / 2).map(item => (
+                                                                <div key={`optimal-${date}-${item.time}`} className="bg-[#FFE5E5] text-[#E85A71] px-4 py-2 rounded-md flex justify-between items-center">
+                                                                    <div className="font-medium">{item.time}</div>
+                                                                    <div className="text-sm">{item.count}人参加可能</div>
+                                                                </div>
+                                                            ))}
+                                                        </>
+                                                    ) : (
+                                                        <p className="text-[#666666]">この日は全員の予定が合う時間がありません。</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
 
+                            </div>
                         </div>
                     </div>
                 </div>
-        </div>
             </main >
-        {/* フッター：保存と切り替えボタン */ }
-        <div className = "sticky bottom-0 z-50 bg-white border-t border-gray-200 py-2 px-2 flex flex-col sm:flex-row justify-center items-center gap-2" >
-            { status === "confirmed" ? (
-            <button
-                onClick={handleUnconfirm}
-                className="bg-[#FFB7C5] hover:bg-[#E85A71] text-white font-medium py-2 px-6 rounded-md transition-colors"
-            >
-                再度日程を調整する
-            </button>
-        ) : (
-            <button
-                onClick={handleConfirm}
-                className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white font-medium py-2 px-6 rounded-md transition-colors"
-            >
-                日程を確定する
-            </button>
-        )
-}
+            {/* フッター：保存と切り替えボタン */}
+            <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-2 px-2 flex flex-col sm:flex-row justify-center items-center gap-2" >
+                {status === "confirmed" ? (
+                    <button
+                        onClick={handleUnconfirm}
+                        className="bg-[#FFB7C5] hover:bg-[#E85A71] text-white font-medium py-2 px-6 rounded-md transition-colors"
+                    >
+                        再度日程を調整する
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleConfirm}
+                        className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white font-medium py-2 px-6 rounded-md transition-colors"
+                    >
+                        日程を確定する
+                    </button>
+                )
+                }
             </div >
         </div >
     )

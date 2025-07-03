@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 
 import { Logo } from "@/components/logo"
 import Link from "next/link"
+import Header from "@/components/header"
 
 import { deleteProjectById } from "@/lib/api"
 
@@ -93,31 +94,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#F8FFF8]">
       {/* トップバー */}
-      <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between relative">
-
-          <div className="flex items-center space-x-3">
-            {/* ロゴ画像 */}
-            <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto" />
-            {/* テキストロゴ */}
-            <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide">
-              Time Matcha
-            </h1>
-          </div>
-
-
-          {/* ユーザー情報 */}
-          <div className="flex items-center">
-            <div className="text-right mr-3">
-              <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
-              <p className="text-xs text-[#666666]">ログイン中</p>
-            </div>
-            <div className="text-3xl sm:text-4xl leading-none">
-              {userProfile?.avatar || "🙂"}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header userName={userProfile?.name || "ゲスト"} userAvatar={userProfile?.avatar}/>
 
       {/* メインコンテンツ */}
       <main className="max-w-5xl mx-auto px-4 py-8">
@@ -201,7 +178,7 @@ export default function HomePage() {
 
             </div>
           ))}
-    </div>
+        </div>
 
         {/* 新規プロジェクト作成ボタン */}
         <div className="fixed bottom-6 right-6">

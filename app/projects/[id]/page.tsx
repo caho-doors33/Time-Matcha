@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useMemo } from "react"
 import Link from "next/link"
+import Header from "@/components/header"
 
 export default function ProjectPage() {
   // ルーターとパラメータの取得
@@ -288,40 +289,12 @@ export default function ProjectPage() {
   return (
     <div className="min-h-screen bg-[#F8FFF8] flex flex-col">
       {/* ヘッダー：戻るボタンとロゴ、保存ボタン */}
-      <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between relative">
-          <div className="flex items-center space-x-2 min-w-0">
-            <Link href="/home" className="text-[#4A7856]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <img src="/logo.png" alt="ロゴ" className="h-14 sm:h-16 w-auto" />
-            <h1 className="text-xl sm:text-2xl font-bold text-[#4A7856] tracking-wide">
-              Time Matcha
-            </h1>
+      <Header
+        userName={userProfile?.name || "ゲスト"}
+        userAvatar={userProfile?.avatar}
+        showBackButton={true}
+      />
 
-          </div>
-
-          {/* ユーザー情報 */}
-          <div className="flex items-center">
-            <div className="text-right mr-3">
-              <p className="text-sm font-medium text-[#333333]">{userProfile?.name || "ゲスト"}</p>
-              <p className="text-xs text-[#666666]">ログイン中</p>
-            </div>
-            <div className="text-3xl sm:text-4xl leading-none">
-              {userProfile?.avatar || "🙂"}
-            </div>
-          </div>
-
-        </div>
-      </header>
 
       {/* メインコンテンツ */}
       <main className="flex-1 overflow-y-auto max-w-full px-2 sm:px-4 py-4">
