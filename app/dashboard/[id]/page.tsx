@@ -22,7 +22,33 @@ export default function ProjectPage() {
     const [undecidedBlocks, setUndecidedBlocks] = useState<{ [date: string]: string[] }>({})
     const [savedDates, setSavedDates] = useState<{ [date: string]: boolean }>({})
     const [deleteTargetDate, setDeleteTargetDate] = useState<string | null>(null)
+    const [isDragging, setIsDragging] = useState(false)
+    const [currentCopyStatus, setCurrentCopyStatus] = useState<"available" | "unavailable" | "undecided" | null>(null)
+    const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
 
+    useEffect(() => {
+        const handleMouseUp = () => {
+            setIsDragging(false)
+            setCurrentCopyStatus(null)
+        }
+        const handleTouchEnd = () => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer)
+                setLongPressTimer(null)
+            }
+            setIsDragging(false)
+            setCurrentCopyStatus(null)
+            window.removeEventListener("touchend", handleTouchEnd)
+        }
+
+        window.addEventListener("mouseup", handleMouseUp)
+        window.addEventListener("touchend", handleTouchEnd)
+
+        return () => {
+            window.removeEventListener("mouseup", handleMouseUp)
+            window.removeEventListener("touchend", handleTouchEnd)
+        }
+    }, [longPressTimer])
 
     useEffect(() => {
         const profileRaw = localStorage.getItem("userProfile")
@@ -34,6 +60,8 @@ export default function ProjectPage() {
         setUserProfile(JSON.parse(profileRaw))
         setUserId(uid)
     }, [router, projectId])
+
+
 
     const fetchData = useCallback(async () => {
         if (!projectId) return
@@ -88,6 +116,21 @@ export default function ProjectPage() {
         }
         return slots
     }, [project])
+
+    const applyStatus = (date: string, time: string, status: "available" | "unavailable" | "undecided") => {
+        const remove = (arr: string[]) => arr.filter((t) => t !== time)
+        const add = (arr: string[]) => [...new Set([...arr, time])]
+
+        setUnavailableBlocks((prev) => ({
+            ...prev,
+            [date]: status === "unavailable" ? add(prev[date] || []) : remove(prev[date] || []),
+        }))
+        setUndecidedBlocks((prev) => ({
+            ...prev,
+            [date]: status === "undecided" ? add(prev[date] || []) : remove(prev[date] || []),
+        }))
+    }
+
 
     const handleSaveOneDate = async (date: string) => {
         if (!userId || !project) return
@@ -147,20 +190,13 @@ export default function ProjectPage() {
 
     const cycleStatus = (date: string, time: string) => {
         const current = getStatus(date, time)
-        const remove = (arr: string[]) => arr.filter((t) => t !== time)
-        const add = (arr: string[]) => [...new Set([...arr, time])]
-
-        if (current === "available") {
-            setUnavailableBlocks((prev) => ({ ...prev, [date]: add(prev[date] || []) }))
-            setUndecidedBlocks((prev) => ({ ...prev, [date]: remove(prev[date] || []) }))
-        } else if (current === "unavailable") {
-            setUnavailableBlocks((prev) => ({ ...prev, [date]: remove(prev[date] || []) }))
-            setUndecidedBlocks((prev) => ({ ...prev, [date]: add(prev[date] || []) }))
-        } else {
-            setUnavailableBlocks((prev) => ({ ...prev, [date]: remove(prev[date] || []) }))
-            setUndecidedBlocks((prev) => ({ ...prev, [date]: remove(prev[date] || []) }))
-        }
+        const next =
+            current === "unavailable" ? "undecided" :
+                current === "undecided" ? "available" :
+                    "unavailable"
+        applyStatus(date, time, next)
     }
+
 
     const getWeekday = (dateStr: string): string => {
         const date = new Date(dateStr)
@@ -198,33 +234,44 @@ export default function ProjectPage() {
             />
 
             <main className="max-w-5xl mx-auto px-4 py-6">
-                <h2 className="text-xl font-bold text-[#4A7856] mb-4"> Dash Board </h2>
+                <div className="flex items-center gap-3 sm:gap-4 mb-4">
+                    <h2 className="text-xl sm:text-2xl font-bold text-[#4A7856]">
+                        Dash Board
+                    </h2>
+                    <button className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-md flex items-center justify-center transition-colors">
+                        <span className="text-base sm:text-xl">＋</span>
+                    </button>
+                </div>
 
                 {project.dates.map((date: string) => (
                     <div key={date} className="border rounded mb-6 overflow-hidden">
                         <div
                             role="button"
                             onClick={() => setOpenDates((prev) => ({ ...prev, [date]: !prev[date] }))}
-                            className="w-full px-4 py-2 bg-[#F8FFF8] text-left text-[#4A7856] font-semibold flex justify-between cursor-pointer"
+                            className="w-full px-4 py-2 bg-[#F8FFF8] text-[#4A7856] font-semibold flex items-center justify-between cursor-pointer"
                         >
-                            <span>
-                                {date}（{getWeekday(date)}）
-                            </span>
+                            {/* 左側：日付と削除ボタン */}
+                            <div className="flex items-center gap-3">
+                                <span>{date}（{getWeekday(date)}）</span>
+                                {openDates[date] && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setDeleteTargetDate(date)
+                                        }}
+                                        className="flex items-center gap-1 bg-[#E85A71] hover:bg-[#cc4c61] text-white text-xs sm:text-sm font-semibold px-3 h-9 sm:h-10 rounded-full transition-colors shadow-sm"
+                                    >
+                                        <span className="text-lg sm:text-xl">🗑️</span>
+                                        <span className="hidden sm:inline">Delete</span>
+                                    </button>
 
-                            <span className="flex items-center gap-2">
-                                {openDates[date] ? "▲" : "▼"}
+                                )}
+                            </div>
 
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setDeleteTargetDate(date)
-                                    }}
-                                    className="text-[#B91C1C] hover:text-white bg-[#FCD5CE] hover:bg-[#E85A71] text-xs px-2 py-1 rounded-md transition-colors"
-                                >
-                                    🗑️
-                                </button>
-                            </span>
+                            {/* 右側：トグル矢印（常に同じ位置） */}
+                            <span className="text-sm">{openDates[date] ? "▲" : "▼"}</span>
                         </div>
+
 
 
 
@@ -242,7 +289,7 @@ export default function ProjectPage() {
                                             ? "bg-[#90C290] text-white cursor-default"
                                             : "bg-[#4A7856] hover:bg-[#90C290] text-white"}`}
                                     >
-                                        {savedDates[date] ? "✅ 保存済み" : "✅ 保存"}
+                                        {savedDates[date] ? "✅ Saved" : "✅ Save"}
                                     </button>
 
                                 </div>
@@ -307,8 +354,74 @@ export default function ProjectPage() {
                                                 return (
                                                     <div
                                                         key={`${date}-${time}`}
-                                                        onClick={() => cycleStatus(date, time)}
+                                                        data-date={date}
+                                                        data-time={time}
                                                         className={`w-14 h-10 border border-white cursor-pointer ${color} hover:opacity-80 transition`}
+
+                                                        // ✅ ダブルクリック（PC）：状態を切り替え
+                                                        onDoubleClick={() => {
+                                                            cycleStatus(date, time)
+                                                        }}
+
+                                                        // ✅ タッチ開始（スマホ）＋長押し判定
+                                                        onTouchStart={(e) => {
+                                                            const status = getStatus(date, time)
+                                                            setCurrentCopyStatus(status)
+
+                                                            const timer = setTimeout(() => {
+                                                                cycleStatus(date, time)
+                                                            }, 1000)
+
+                                                            setLongPressTimer(timer)
+                                                            setIsDragging(true)
+                                                            // ドラッグ開始時は状態を変更しない
+                                                        }}
+
+                                                        // ✅ タッチ移動でドラッグコピー
+                                                        onTouchMove={(e) => {
+                                                            const target = document.elementFromPoint(
+                                                                e.touches[0].clientX,
+                                                                e.touches[0].clientY
+                                                            ) as HTMLElement
+                                                            if (!target?.dataset?.date || !target?.dataset?.time) return
+                                                            if (isDragging && currentCopyStatus) {
+                                                                applyStatus(target.dataset.date, target.dataset.time, currentCopyStatus)
+                                                            }
+                                                        }}
+
+                                                        // ✅ タッチ終了時の処理
+                                                        onTouchEnd={(e) => {
+                                                            if (longPressTimer) {
+                                                                clearTimeout(longPressTimer)
+                                                                setLongPressTimer(null)
+                                                            }
+                                                            if (isDragging && currentCopyStatus) {
+                                                                applyStatus(date, time, currentCopyStatus)
+                                                            }
+                                                        }}
+
+                                                        // ✅ PC: ドラッグ開始
+                                                        onMouseDown={(e) => {
+                                                            e.preventDefault()
+                                                            const status = getStatus(date, time)
+                                                            setCurrentCopyStatus(status)
+                                                            setIsDragging(true)
+                                                            // ドラッグ開始時は状態を変更しない
+                                                        }}
+
+                                                        // ✅ PC: ドラッグ中
+                                                        onMouseEnter={() => {
+                                                            if (isDragging && currentCopyStatus) {
+                                                                applyStatus(date, time, currentCopyStatus)
+                                                            }
+                                                        }}
+
+                                                        // ✅ PC: ドラッグ終了時の処理
+                                                        onMouseUp={() => {
+                                                            if (isDragging && currentCopyStatus) {
+                                                                applyStatus(date, time, currentCopyStatus)
+                                                            }
+                                                        }}
                                                     />
                                                 )
                                             })}

@@ -8,6 +8,8 @@ import data from '@emoji-mart/data'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { useSearchParams } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+
 
 
 type UserProfile = {
@@ -21,6 +23,7 @@ export default function LoginPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [savedProfile, setSavedProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasSession, setHasSession] = useState(false)
 
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") || "/home"
@@ -41,12 +44,21 @@ export default function LoginPage() {
       localStorage.setItem("userId", newId)
     }
 
-    const saved = localStorage.getItem("userProfile")
-    if (saved) {
-      setSavedProfile(JSON.parse(saved))
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        setHasSession(true)
+        const profile = localStorage.getItem("userProfile")
+        if (profile) {
+          setSavedProfile(JSON.parse(profile))
+        } else {
+          router.push("/setup-profile")
+        }
+      }
+      setIsLoading(false)
     }
 
-    setIsLoading(false) // 読み込み完了
+    checkSession()
   }, [])
 
   const handleRegister = () => {
@@ -65,6 +77,15 @@ export default function LoginPage() {
     router.push(redirect)
   }
 
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "http://localhost:3000/auth/callback" // 本番ならドメインに変える
+      },
+    })
+  }
+
   if (isLoading) {
     return <div className="text-center text-[#4A7856] mt-20">読み込み中...</div>
   }
@@ -72,7 +93,17 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#FFF9F9] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-        {savedProfile ? (
+        {!hasSession ? (
+          <div className="text-center">
+            <h2 className="text-xl font-medium text-[#4A7856] mb-6">ログイン</h2>
+            <button
+              onClick={handleGoogleLogin}
+              className="bg-[#6BA8E0] hover:bg-[#4D91D1] text-white py-2 px-4 rounded transition w-full"
+            >
+              Googleアカウントで始める
+            </button>
+          </div>
+        ) : savedProfile ? (
           <div className="text-center">
             <div className="flex flex-col gap-3">
               <p className="text-lg mb-4">
@@ -84,76 +115,28 @@ export default function LoginPage() {
               >
                 このアカウントで続ける
               </button>
+
               <button
-                onClick={() => {
+                onClick={async () => {
                   const confirmReset = confirm(
                     "別のアカウントを作成すると、これまでのデータ（ニックネーム・絵文字・回答履歴など）はすべて削除されます。本当によろしいですか？"
                   )
                   if (confirmReset) {
+                    await supabase.auth.signOut()
                     localStorage.clear()
                     setSavedProfile(null)
                     setName("")
                     setAvatar("😊")
+                    setHasSession(false)
                   }
                 }}
                 className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white py-2 px-4 rounded-md transition"
               >
-                別のアカウントで始める
+                アカウントを削除する
               </button>
             </div>
           </div>
-        ) : (
-          <>
-            <h2 className="text-xl font-medium text-[#4A7856] mb-6 text-center">プロフィールを登録</h2>
-
-            <div className="mb-4">
-              <label className="block text-sm text-[#4A7856] mb-1">ユーザー名</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="例：さくら"
-                className="w-full px-4 py-2 border border-[#D4E9D7] rounded-md"
-              />
-            </div>
-
-            <div className="mb-6 relative">
-              <label className="block text-sm text-[#4A7856] mb-1">アイコン（絵文字）</label>
-
-              <div className="flex items-center space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen(!pickerOpen)}
-                  className="text-2xl px-4 py-2 border rounded-md bg-white shadow-sm"
-                >
-                  {avatar}
-                </button>
-                <span className="text-sm text-[#888]">← 絵文字を選んでね！</span>
-              </div>
-
-              {pickerOpen && (
-                <div className="absolute z-50 mt-2">
-                  <Picker
-                    onEmojiSelect={(emoji: any) => {
-                      setAvatar(emoji.native)
-                      setPickerOpen(false)
-                    }}
-                    title="絵文字を選ぶ"
-                    emoji="point_up"
-                    theme="light"
-                  />
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handleRegister}
-              className="w-full bg-[#E85A71] hover:bg-[#FF8FAB] text-white py-2 px-4 rounded-md transition"
-            >
-              このアカウントで始める
-            </button>
-          </>
-        )}
+        ) : null}
       </div>
     </div>
   )

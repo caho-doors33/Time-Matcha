@@ -8,11 +8,14 @@ import Link from "next/link"
 import Header from "@/components/header"
 
 import { deleteProjectById } from "@/lib/api"
+import ConfirmDeleteModal from "@/components/ui/delete_modal"
+
 
 export default function HomePage() {
   const [projects, setProjects] = useState<any[]>([])
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
   const [userProfile, setUserProfile] = useState<{ name: string; avatar: string } | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   useEffect(() => {
     const profile = localStorage.getItem("userProfile")
@@ -71,15 +74,16 @@ export default function HomePage() {
     fetchProjects()
   }, [sortOrder])
 
-  const handleDelete = async (id: string) => {
-    const confirmDelete = confirm("このプロジェクトを削除しますか？")
-    if (!confirmDelete) return
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return
 
     try {
-      await deleteProjectById(id)
-      setProjects((prev) => prev.filter((p) => p.id !== id))
+      await deleteProjectById(deleteTargetId)
+      setProjects((prev) => prev.filter((p) => p.id !== deleteTargetId))
+      setDeleteTargetId(null)
     } catch (err) {
       alert("削除に失敗しました:" + (err as Error).message)
+      setDeleteTargetId(null)
     }
   }
 
@@ -94,7 +98,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#F8FFF8]">
       {/* トップバー */}
-      <Header userName={userProfile?.name || "ゲスト"} userAvatar={userProfile?.avatar}/>
+      <Header userName={userProfile?.name || "ゲスト"} userAvatar={userProfile?.avatar} />
 
       {/* メインコンテンツ */}
       <main className="max-w-5xl mx-auto px-4 py-8">
@@ -123,60 +127,49 @@ export default function HomePage() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border-l-4 border-[#FFB7C5] flex"
+              className="bg-white rounded-lg shadow-sm p-4 flex justify-between items-start relative hover:shadow-md transition-shadow border-l-4 border-[#FFB7C5]"
             >
               {/* 左：本文エリア */}
-              <div className="flex-1 pr-4">
-                <div className="mb-2">
-                  <h3 className="text-lg font-medium text-[#333333] break-words">
-                    {project.name}
-                  </h3>
+              <div className="flex-1 pr-2">
+                <h3 className="text-base font-semibold text-[#333333] break-words mb-1">
+                  {project.name}
+                </h3>
+
+                <div className="flex items-center text-xs text-[#666666] mb-1">
+                  <span className={`inline-block w-2 h-2 rounded-full mr-2 ${project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"}`}></span>
+                  {project.status === "adjusting" ? "予定調整中" : "予定確定済み"}
                 </div>
 
-                <div className="flex items-center mb-2">
-                  <span
-                    className={`inline-block w-2 h-2 rounded-full mr-2 ${project.status === "adjusting" ? "bg-[#FF8FAB]" : "bg-[#90C290]"}`}
-                  ></span>
-                  <span className="text-xs text-[#666666]">
-                    {project.status === "adjusting" ? "予定調整中" : "予定確定済み"}
-                  </span>
-                </div>
+                <p className="text-xs text-[#666666]">作成日: {new Date(project.created_at).toLocaleDateString()}</p>
+                <p className="text-xs text-[#666666]">作成者: {project.user_name || "不明"}</p>
 
-                <p className="text-xs text-[#666666]">
-                  作成日: {new Date(project.created_at).toLocaleDateString()}
-                </p>
-                <p className="text-xs text-[#666666] mt-1">
-                  作成者: {project.user_name || "不明"}
-                </p>
-              </div>
-              {/* 右：縦並びボタン */}
-              <div className="flex flex-col justify-between items-end min-h-[150px] space-y-2">
-                <Link href={`/projects/${project.id}`}>
-                  <button className="text-xs bg-[#D4E9D7] hover:bg-[#90C290] text-[#4A7856] hover:text-white py-1 px-2 rounded transition-colors">
-                    ✒️回答
+                {/* 📊 Dashboard ボタン（やさしい緑） */}
+                <Link href={`/dashboard/${project.id}`}>
+                  <button className="mt-3 w-full text-sm font-semibold bg-[#D4E9D7] hover:bg-[#90C290] text-[#4A7856] py-2 px-4 rounded-md transition">
+                    📊 Dashboard
                   </button>
                 </Link>
+              </div>
+
+              {/* 右上：Delete & Share */}
+              <div className="flex flex-col items-end space-y-2 absolute top-3 right-3">
                 <button
-                  className="text-xs bg-[#FFE5E5] hover:bg-[#FF8FAB] text-[#E85A71] hover:text-white py-1 px-2 rounded transition-colors"
-                  onClick={() => handleDelete(project.id)}
+                  className="text-[10px] bg-[#FFE5E5] hover:bg-[#FF8FAB] text-[#E85A71] hover:text-white py-1 px-2 rounded transition"
+                  onClick={() => setDeleteTargetId(project.id)}
+
                 >
-                  🗑️削除
+                  🗑️ Delete
                 </button>
                 <button
                   onClick={() => handleCopyLink(project.id)}
-                  className="text-xs bg-[#FFF6E5] hover:bg-[#FFD580] text-[#AA8833] hover:text-white py-1 px-2 rounded transition-colors"
+                  className="text-[10px] bg-[#FFF6E5] hover:bg-[#FFD580] text-[#AA8833] hover:text-white py-1 px-2 rounded transition"
                 >
-                  {copiedId === project.id ? "コピー済み" : "🔗共有"}
+                  {copiedId === project.id ? "Copied!" : "🔗 Share"}
                 </button>
-                <Link href={`/dashboard/${project.id}`}>
-                  <button className="text-xs bg-[#E5F3FF] hover:bg-[#90BAE9] text-[#3171A3] hover:text-white py-1 px-2 rounded transition-colors">
-                    📊ダッシュボード
-                  </button>
-                </Link>
               </div>
-
-
             </div>
+
+
           ))}
         </div>
 
@@ -188,7 +181,17 @@ export default function HomePage() {
             </button>
           </Link>
         </div>
-      </main >
+      </main>
+      <ConfirmDeleteModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        title="このプロジェクトを削除しますか？"
+        description="削除すると、このプロジェクトのデータは元に戻せません。本当によろしいですか？"
+        confirmText="完全に削除する"
+        cancelText="キャンセル"
+      />
+
     </div >
   )
 }

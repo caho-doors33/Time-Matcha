@@ -19,8 +19,16 @@ export default function ConfirmationPage() {
     const [loading, setLoading] = useState(true)
     const [openDates, setOpenDates] = useState<{ [date: string]: boolean }>({})
 
+    const [isDragging, setIsDragging] = useState(false)
 
     const timeSlots = Array.from({ length: 13 }, (_, i) => `${i + 9}:00`)
+
+    // getStatusをトップレベルに移動
+    const getStatus = (date: string, time: string): "available" | "unavailable" | "undecided" => {
+        const myself = users.find(u => u.id === localStorage.getItem("userId"))
+        const times = myself?.availability[date] || []
+        return times.includes(time) ? "available" : "unavailable"
+    }
 
     const fetchData = useCallback(async () => {
         if (!projectId) return
@@ -75,6 +83,31 @@ export default function ConfirmationPage() {
             availability: data.availability
         }))
 
+        const cycleStatus = (date: string, time: string) => {
+            const myId = localStorage.getItem("userId")
+            const myself = users.find(u => u.id === myId)
+            if (!myself) return
+
+            const prev = myself.availability[date] || []
+            const already = prev.includes(time)
+
+            const updated = already
+                ? prev.filter(t => t !== time)
+                : [...prev, time]
+
+            const newUsers = users.map(u => {
+                if (u.id !== myId) return u
+                return {
+                    ...u,
+                    availability: {
+                        ...u.availability,
+                        [date]: updated,
+                    },
+                }
+            })
+
+            setUsers(newUsers)
+        }
         setUsers(userList)
         setLoading(false)
     }, [projectId])
@@ -157,15 +190,43 @@ export default function ConfirmationPage() {
         const userAvailability = user.availability[date] || []
 
         return (
-            <div className="flex">
+            <div className="flex items-center mb-1">
+                <div className="w-0"></div>
                 {timeSlots.map((time) => {
-                    const isAvailable = userAvailability.includes(time)
+                    const status = getStatus(date, time)
+                    const color =
+                        status === "available" ? "bg-[#D4E9D7]" :
+                            status === "unavailable" ? "bg-[#F3B3B3]" :
+                                "bg-[#FFFACD]"
+
                     return (
                         <div
-                            key={`${userId}-${date}-${time}`}
-                            className={`w-14 h-6 ${isAvailable ? "bg-[#D4E9D7]" : "bg-gray-100"} border-r border-white`}
-                            title={`${time} - ${isAvailable ? "参加可能" : "参加不可"}`}
-                        ></div>
+                            key={`${date}-${time}`}
+                            className={`w-14 h-10 border border-white cursor-pointer ${color} hover:opacity-80 transition`}
+                            data-date={date}
+                            data-time={time}
+                            onMouseDown={() => {
+                                setIsDragging(true)
+                                cycleStatus(date, time)
+                            }}
+                            onMouseEnter={() => {
+                                if (isDragging) cycleStatus(date, time)
+                            }}
+                            onMouseUp={() => setIsDragging(false)}
+                            onTouchStart={() => {
+                                setIsDragging(true)
+                                cycleStatus(date, time)
+                            }}
+                            onTouchMove={(e) => {
+                                const target = document.elementFromPoint(
+                                    e.touches[0].clientX,
+                                    e.touches[0].clientY
+                                ) as HTMLElement
+                                if (!target?.dataset?.date || !target?.dataset?.time) return
+                                cycleStatus(target.dataset.date, target.dataset.time)
+                            }}
+                            onTouchEnd={() => setIsDragging(false)}
+                        />
                     )
                 })}
             </div>
@@ -251,10 +312,32 @@ export default function ConfirmationPage() {
                                                             const isAvailable = userAvailability.includes(time)
                                                             return (
                                                                 <div
-                                                                    key={`slot-${user.id}-${date}-${time}`}
-                                                                    className={`w-14 h-6 ${isAvailable ? "bg-[#D4E9D7]" : "bg-gray-100"} border-r border-white`}
-                                                                    title={`${time} - ${isAvailable ? "参加可能" : "参加不可"}`}
+                                                                    key={`${date}-${time}`}
+                                                                    onMouseDown={() => {
+                                                                        setIsDragging(true)
+                                                                        setDragStartStatus(getStatus(date, time)) // 現在の状態に応じて判断
+                                                                        cycleStatus(date, time)
+                                                                    }}
+                                                                    onMouseEnter={(e) => {
+                                                                        if (isDragging) cycleStatus(date, time)
+                                                                    }}
+                                                                    onMouseUp={() => setIsDragging(false)}
+                                                                    onTouchStart={() => {
+                                                                        setIsDragging(true)
+                                                                        setDragStartStatus(getStatus(date, time))
+                                                                        cycleStatus(date, time)
+                                                                    }}
+                                                                    onTouchMove={(e) => {
+                                                                        const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) as HTMLElement
+                                                                        if (!target?.dataset?.date || !target?.dataset?.time) return
+                                                                        cycleStatus(target.dataset.date, target.dataset.time)
+                                                                    }}
+                                                                    onTouchEnd={() => setIsDragging(false)}
+                                                                    data-date={date}
+                                                                    data-time={time}
+                                                                    className={`w-14 h-10 border border-white cursor-pointer ${color} hover:opacity-80 transition`}
                                                                 />
+
                                                             )
                                                         })}
                                                     </div>

@@ -30,7 +30,12 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                 <p className="text-sm text-[#666] mb-4">{description}</p>
                 <DialogFooter className="flex justify-end gap-2">
                     <Button variant="outline" onClick={onClose}>{cancelText}</Button>
-                    <Button variant="destructive" onClick={onConfirm}>{confirmText}</Button>
+                    <Button
+                        onClick={onConfirm}
+                        className="bg-[#FCD5CE] text-[#B91C1C] hover:bg-[#E85A71] hover:text-white transition"
+                    >
+                        {confirmText}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
