@@ -25,6 +25,11 @@ export default function ProjectPage() {
     const [isDragging, setIsDragging] = useState(false)
     const [currentCopyStatus, setCurrentCopyStatus] = useState<"available" | "unavailable" | "undecided" | null>(null)
     const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+    const [activeTab, setActiveTab] = useState<"full" | "mostly" | "custom">("full")
+    const [selectedMembers, setSelectedMembers] = useState<string[]>([]) // userId の配列
+    const [showMemberSelector, setShowMemberSelector] = useState(false)
+
+
 
     useEffect(() => {
         const handleMouseUp = () => {
@@ -60,6 +65,14 @@ export default function ProjectPage() {
         setUserProfile(JSON.parse(profileRaw))
         setUserId(uid)
     }, [router, projectId])
+
+    useEffect(() => {
+        if (activeTab === "custom") {
+            setShowMemberSelector(true)
+        } else {
+            setShowMemberSelector(false)
+        }
+    }, [activeTab])
 
 
 
@@ -101,6 +114,19 @@ export default function ProjectPage() {
         fetchData()
     }, [fetchData])
 
+    const groupAnswersByUser = useMemo(() => {
+        const map: { [userId: string]: { name: string; avatar: string; availability: any } } = {}
+        for (const a of answers) {
+            if (!a.availability) continue
+            map[a.user_id] = {
+                name: a.name || "ゲスト",
+                avatar: a.avatar || "🌿",
+                availability: a.availability,
+            }
+        }
+        return map
+    }, [answers])
+
     const timeSlots = useMemo(() => {
         if (!project?.start_time || !project?.end_time) return []
         const slots = []
@@ -115,7 +141,100 @@ export default function ProjectPage() {
             }
         }
         return slots
-    }, [project])
+    },
+        [project])
+
+    // ✅ 各日付ごとの "timeSlot → 参加ユーザーID" のマッピングを構築
+    const timeParticipation = useMemo(() => {
+        const map: {
+            [date: string]: {
+                [time: string]: string[] // 参加しているuserIdの配列
+            }
+        } = {}
+
+        if (!project || !timeSlots.length) return map
+
+        for (const date of project.dates) {
+            map[date] = {}
+            for (const time of timeSlots) {
+                const participants: string[] = []
+
+                for (const [uid, user] of Object.entries(groupAnswersByUser)) {
+                    const availableTimes = user.availability?.[date]?.available || []
+                    if (availableTimes.includes(time)) {
+                        participants.push(uid)
+                    }
+                }
+
+                map[date][time] = participants
+            }
+        }
+
+        return map
+    }, [project, timeSlots, groupAnswersByUser])
+
+    // ✅ 同じ参加者構成の時間帯をまとめる（連続時間帯グループ化）
+    const groupedAvailability = useMemo(() => {
+        const result: {
+            [date: string]: {
+                start: string
+                end: string
+                members: string[]
+            }[]
+        } = {}
+
+        for (const date of project?.dates || []) {
+            const dateMap = timeParticipation[date] || {}
+            const groups: typeof result[string] = []
+
+            let prevMembers: string[] = []
+            let currentGroup: { start: string; end: string; members: string[] } | null = null
+
+            for (const time of timeSlots) {
+                const members = (dateMap[time] || []).sort()
+                const sameGroup = JSON.stringify(members) === JSON.stringify(prevMembers)
+
+                if (!sameGroup) {
+                    if (currentGroup) {
+                        currentGroup.end = time
+                        groups.push(currentGroup)
+                    }
+                    currentGroup = { start: time, end: time, members }
+                }
+
+                prevMembers = members
+            }
+
+            if (currentGroup) {
+                currentGroup.end = timeSlots[timeSlots.length - 1]
+                groups.push(currentGroup)
+            }
+
+            result[date] = groups.filter(g => g.members.length > 0)
+        }
+
+        return result
+    }, [timeParticipation, timeSlots])
+
+    const filteredGroups = (date: string) => {
+        const groups = groupedAvailability[date] || []
+        const total = Object.keys(groupAnswersByUser).length
+
+        if (activeTab === "full") {
+            return groups.filter(g => g.members.length === total)
+        } else if (activeTab === "mostly") {
+            return groups.filter(g => g.members.length >= Math.ceil(total * 0.8))
+        } else if (activeTab === "custom") {
+            return groups.filter(g =>
+                selectedMembers.length > 0 &&
+                selectedMembers.every((uid) => g.members.includes(uid))
+            )
+        }
+
+        return groups
+    }
+
+
 
     const applyStatus = (date: string, time: string, status: "available" | "unavailable" | "undecided") => {
         const remove = (arr: string[]) => arr.filter((t) => t !== time)
@@ -166,21 +285,6 @@ export default function ProjectPage() {
             fetchData()
         }
     }
-
-
-
-    const groupAnswersByUser = useMemo(() => {
-        const map: { [userId: string]: { name: string; avatar: string; availability: any } } = {}
-        for (const a of answers) {
-            if (!a.availability) continue
-            map[a.user_id] = {
-                name: a.name || "ゲスト",
-                avatar: a.avatar || "🌿",
-                availability: a.availability,
-            }
-        }
-        return map
-    }, [answers])
 
     const getStatus = (date: string, time: string): "available" | "unavailable" | "undecided" => {
         if (unavailableBlocks[date]?.includes(time)) return "unavailable"
@@ -465,6 +569,117 @@ export default function ProjectPage() {
                         )}
                     </div>
                 ))}
+
+                <div className="max-w-5xl mx-auto px-4 pb-8">
+                    <h2 className="text-xl sm:text-2xl font-bold text-[#E85A71] mb-4">🎯 Best Time Suggestions</h2>
+                    {/* タブUI */}
+                    <div className="flex gap-2 mb-4">
+                        <button onClick={() => setActiveTab("full")} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab === "full" ? "bg-[#90C290] text-white" : "bg-white text-[#4A7856] border-[#90C290]"}`}>
+                            Full
+                        </button>
+                        <button onClick={() => setActiveTab("mostly")} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab === "mostly" ? "bg-[#FFD580] text-white" : "bg-white text-[#AA8833] border-[#FFD580]"}`}>
+                            80% or more
+                        </button>
+                        <button onClick={() => setActiveTab("custom")} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab === "custom" ? "bg-[#FF8FAB] text-white" : "bg-white text-[#E85A71] border-[#FF8FAB]"}`}>
+                            Custom members
+                        </button>
+                    </div>
+
+                    {activeTab === "custom" && (
+                        <div className="mb-4 flex flex-wrap gap-3">
+                            {Object.entries(groupAnswersByUser).map(([uid, user]) => {
+                                const isSelected = selectedMembers.includes(uid)
+                                return (
+                                    <label
+                                        key={uid}
+                                        className={`flex items-center gap-2 px-3 py-1 rounded-full border cursor-pointer transition 
+            ${isSelected ? "bg-[#D4E9D7] text-[#4A7856] border-[#90C290]" : "bg-white text-[#666] border-[#ccc]"}
+          `}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() =>
+                                                setSelectedMembers(prev =>
+                                                    isSelected ? prev.filter(id => id !== uid) : [...prev, uid]
+                                                )
+                                            }
+                                            className="w-4 h-4 accent-[#4A7856]"
+                                        />
+                                        <span className="text-xl">{user.avatar}</span>
+                                        <span className="text-sm">{user.name}</span>
+                                    </label>
+                                )
+                            })}
+                        </div>
+                    )}
+
+
+
+
+
+                    {project.dates.map((date: string) => {
+                        const groups = filteredGroups(date)
+                        const hasFull = groups.some(g => g.members.length === Object.keys(groupAnswersByUser).length)
+
+                        return (
+                            <div key={date} className="mb-6 border border-[#eee] rounded-md shadow-sm bg-white">
+                                <div className="bg-[#F8FFF8] px-4 py-2 flex justify-between items-center text-[#4A7856] font-semibold text-sm sm:text-base">
+                                    <span>{date}（{getWeekday(date)}）</span>
+                                    {hasFull && (
+                                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs sm:text-sm font-semibold">
+                                            Full member! 💯
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="px-4 py-3 space-y-2">
+                                    {groups.map((g, i) => {
+                                        const ratio = g.members.length / Object.keys(groupAnswersByUser).length
+                                        const bg =
+                                            ratio === 1
+                                                ? "bg-[#D4E9D7]"
+                                                : ratio >= 0.8
+                                                    ? "bg-[#FFF6CC]"
+                                                    : ratio >= 0.5
+                                                        ? "bg-[#FFE5E5]"
+                                                        : "bg-gray-100"
+
+                                        return (
+                                            <div
+                                                key={`${date}-group-${i}`}
+                                                className={`rounded-md ${bg} px-3 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between`}
+                                            >
+                                                <div className="font-medium text-sm sm:text-base">
+                                                    ⏰ {g.start}〜{g.end}
+                                                </div>
+                                                <div className="relative inline-block group cursor-pointer">
+                                                    <div className="text-xl sm:text-2xl">
+                                                        {g.members.map((uid) => groupAnswersByUser[uid]?.avatar).join(" ")}
+                                                    </div>
+
+                                                    <div className="absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity bg-white border border-[#ccc] rounded-md shadow-md px-3 py-2 text-sm text-[#333] whitespace-nowrap pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                                                        {g.members.map((uid) => (
+                                                            <div key={uid} className="flex items-center gap-2">
+                                                                <span className="text-xl">{groupAnswersByUser[uid]?.avatar}</span>
+                                                                <span>{groupAnswersByUser[uid]?.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        )
+                                    })}
+                                    {groups.length === 0 && (
+                                        <p className="text-sm text-[#888]">参加可能な時間帯が見つかりませんでした。</p>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+
             </main>
             <ConfirmDeleteModal
                 open={!!deleteTargetDate}
