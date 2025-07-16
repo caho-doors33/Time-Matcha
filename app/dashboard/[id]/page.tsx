@@ -1,4 +1,3 @@
-// UnifiedProjectPage.tsx
 "use client"
 
 import { Logo } from "@/components/logo"
@@ -28,6 +27,10 @@ export default function ProjectPage() {
     const [activeTab, setActiveTab] = useState<"full" | "mostly" | "custom">("full")
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]) // userId の配列
     const [showMemberSelector, setShowMemberSelector] = useState(false)
+    const [addDateOpen, setAddDateOpen] = useState(false)
+    const [tempSelectedDates, setTempSelectedDates] = useState<string[]>([])
+    const [currentDate, setCurrentDate] = useState(new Date())
+
 
 
 
@@ -325,6 +328,28 @@ export default function ProjectPage() {
         }
     }
 
+    const generateCalendarDays = () => {
+        const year = currentDate.getFullYear()
+        const month = currentDate.getMonth()
+        const firstDay = new Date(year, month, 1)
+        const lastDay = new Date(year, month + 1, 0)
+        const daysInMonth = lastDay.getDate()
+        const firstDayOfWeek = firstDay.getDay()
+
+        const days = []
+        const prevMonthLastDay = new Date(year, month, 0).getDate()
+        for (let i = 0; i < firstDayOfWeek; i++) {
+            days.push({ day: prevMonthLastDay - firstDayOfWeek + i + 1, isCurrentMonth: false })
+        }
+        for (let i = 1; i <= daysInMonth; i++) {
+            days.push({ day: i, isCurrentMonth: true })
+        }
+        return days
+    }
+    const calendarDays = generateCalendarDays()
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth() + 1
+
 
 
     if (loading || !project) return <p className="p-4">読み込み中...</p>
@@ -338,13 +363,27 @@ export default function ProjectPage() {
             />
 
             <main className="max-w-5xl mx-auto px-4 py-6">
+                <div className="mb-8 text-start">
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-[#4A7856] tracking-tight">
+                        {project?.name || "none"}
+                    </h1>
+                    {project?.location && (
+                        <p className="text-base sm:text-lg text-[#888] mt-2">📍 {project.location}</p>
+                    )}
+                </div>
+
+
                 <div className="flex items-center gap-3 sm:gap-4 mb-4">
                     <h2 className="text-xl sm:text-2xl font-bold text-[#4A7856]">
                         Dash Board
                     </h2>
-                    <button className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-md flex items-center justify-center transition-colors">
+                    <button
+                        onClick={() => setAddDateOpen(true)}
+                        className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-md flex items-center justify-center transition-colors"
+                    >
                         <span className="text-base sm:text-xl">＋</span>
                     </button>
+
                 </div>
 
                 {project.dates.map((date: string) => (
@@ -679,8 +718,128 @@ export default function ProjectPage() {
                         )
                     })}
                 </div>
-
             </main>
+            {addDateOpen && (
+                <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
+                    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                        <h2 className="text-lg font-bold text-[#4A7856] mb-4">日付を追加</h2>
+
+                        {/* カレンダー */}
+                        <div className="flex justify-between items-center mb-2">
+                            <button onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}>◀</button>
+                            <div className="font-semibold">{year}年{month}月</div>
+                            <button onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}>▶</button>
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1 mb-4">
+                            {["日", "月", "火", "水", "木", "金", "土"].map((d, i) => (
+                                <div key={i} className="text-xs text-center text-gray-600">{d}</div>
+                            ))}
+                            {calendarDays.map((item, i) => {
+                                const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(item.day).padStart(2, "0")}`
+                                const isSelected = tempSelectedDates.includes(dateStr)
+                                return (
+                                    <div
+                                        key={i}
+                                        onClick={() => {
+                                            setTempSelectedDates(prev =>
+                                                isSelected ? prev.filter(d => d !== dateStr) : [...prev, dateStr]
+                                            )
+                                        }}
+                                        className={`h-8 w-8 text-sm flex items-center justify-center rounded-full cursor-pointer
+                ${!item.isCurrentMonth ? "text-gray-300" : isSelected ? "bg-[#E85A71] text-white" : "hover:bg-[#FFF0F0] text-gray-800"}
+              `}
+                                    >
+                                        {item.day}
+                                    </div>
+                                )
+                            })}
+                        </div>
+
+                        {/* 保存・キャンセルボタン */}
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => setAddDateOpen(false)} className="text-sm text-gray-500 hover:underline">キャンセル</button>
+                            <button
+                                className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white py-1 px-3 rounded"
+                                onClick={async () => {
+                                    const toMDFormat = (iso: string) => {
+                                        const d = new Date(iso)
+                                        return `${d.getMonth() + 1}/${d.getDate()}`
+                                    }
+
+                                    const formattedDates = tempSelectedDates.map(toMDFormat)
+                                    const newDates = [...new Set([...project.dates, ...formattedDates])].sort()
+
+                                    const { error } = await supabase
+                                        .from("projects")
+                                        .update({ dates: newDates })
+                                        .eq("id", project.id)
+
+                                    if (!error) {
+                                        setProject({ ...project, dates: newDates })
+                                        setTempSelectedDates([])
+                                        setAddDateOpen(false)
+                                        setOpenDates(prev => {
+                                            const updated = { ...prev }
+                                            formattedDates.forEach(date => { updated[date] = true })
+                                            return updated
+                                        })
+                                    } else {
+                                        alert("追加に失敗しました")
+                                    }
+                                }}
+                            >
+                                追加
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <footer className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-3">
+                <div className="max-w-5xl mx-auto px-4">
+                    {project.status === "confirmed" ? (
+                        <button
+                            onClick={async () => {
+                                const { error } = await supabase
+                                    .from("projects")
+                                    .update({ status: "adjusting" })
+                                    .eq("id", project.id)
+
+                                if (!error) {
+                                    setProject({ ...project, status: "adjusting" })
+                                } else {
+                                    alert("再調整への切り替えに失敗しました")
+                                }
+                            }}
+                            className="w-full bg-[#FFB7C5] hover:bg-[#E85A71] text-white font-medium py-2 px-4 rounded-md transition-colors"
+                        >
+                            🔄 再度日程を調整する
+                        </button>
+                    ) : (
+                        <button
+                            onClick={async () => {
+                                const { error } = await supabase
+                                    .from("projects")
+                                    .update({ status: "confirmed" })
+                                    .eq("id", project.id)
+
+                                if (!error) {
+                                    setProject({ ...project, status: "confirmed" })
+                                } else {
+                                    alert("日程の確定に失敗しました")
+                                }
+                            }}
+                            className="w-full bg-[#E85A71] hover:bg-[#FF8FAB] text-white font-medium py-2 px-4 rounded-md transition-colors"
+                        >
+                            ✅ 日程を確定する
+                        </button>
+                    )}
+                </div>
+            </footer>
+
+
             <ConfirmDeleteModal
                 open={!!deleteTargetDate}
                 onClose={() => setDeleteTargetDate(null)}

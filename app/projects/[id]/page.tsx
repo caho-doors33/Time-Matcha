@@ -229,9 +229,6 @@ export default function CreateProjectPage() {
               </div>
             </div>
 
-
-
-
             {/* スケジュール候補日 */}
             <div className="mb-8 mt-6">
               <label className="block text-sm font-medium text-[#4A7856] mb-3">スケジュール候補日</label>

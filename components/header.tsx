@@ -55,19 +55,32 @@ export default function Header({
 
         const userId = localStorage.getItem("userId")
         if (userId) {
-            const { error } = await supabase
+            // 🔄 1. answersテーブルを更新（すでにある処理）
+            const { error: answerError } = await supabase
                 .from("answers")
                 .update({ name, avatar })
                 .eq("user_id", userId)
 
-            if (error) {
-                console.error("回答データの更新エラー:", error.message)
+            if (answerError) {
+                console.error("回答データの更新エラー:", answerError.message)
                 alert("プロフィール保存はできましたが、過去の回答データ更新に失敗しました")
+            }
+
+            // 🆕 2. projectsテーブルも更新（Aの処理）
+            const { error: projectError } = await supabase
+                .from("projects")
+                .update({ user_name: name })
+                .eq("user_id", userId)
+
+            if (projectError) {
+                console.error("プロジェクト作成者名の更新エラー:", projectError.message)
+                alert("プロフィール保存はできましたが、プロジェクト作成者名の更新に失敗しました")
             }
         }
 
         location.reload()
     }
+
 
     return (
         <header className="bg-[#FFE5E5] shadow-sm sticky top-0 z-50">

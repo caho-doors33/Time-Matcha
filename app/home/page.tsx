@@ -142,6 +142,11 @@ export default function HomePage() {
 
                 <p className="text-xs text-[#666666]">作成日: {new Date(project.created_at).toLocaleDateString()}</p>
                 <p className="text-xs text-[#666666]">作成者: {project.user_name || "不明"}</p>
+                {/* 追加：場所を表示 */}
+                {project.location && (
+                  <p className="text-xs text-[#666666]">場所: {project.location}</p>
+                )}
+
 
                 {/* 📊 Dashboard ボタン（やさしい緑） */}
                 <Link href={`/dashboard/${project.id}`}>
