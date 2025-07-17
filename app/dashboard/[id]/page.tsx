@@ -590,13 +590,27 @@ export default function ProjectPage() {
                                                     <span className="text-sm text-[#333]">{user.name}</span>
                                                 </div>
                                                 {timeSlots.map((time) => {
-                                                    const times = user.availability?.[date]?.available || []
-                                                    const isAvailable = times.includes(time)
+                                                    const available = user.availability?.[date]?.available || []
+                                                    const undecided = user.availability?.[date]?.undecided || []
+                                                    const isAvailable = available.includes(time)
+                                                    const isUndecided = undecided.includes(time)
+
+                                                    let bgColor = "bg-gray-100"
+                                                    let title = "不明"
+
+                                                    if (isAvailable) {
+                                                        bgColor = "bg-[#D4E9D7]" // 緑
+                                                        title = "参加可能"
+                                                    } else if (isUndecided) {
+                                                        bgColor = "bg-[#FFFACD]" // 黄色
+                                                        title = "未定"
+                                                    }
+
                                                     return (
                                                         <div
                                                             key={`${uid}-${time}`}
-                                                            className={`w-14 h-6 border border-white ${isAvailable ? "bg-[#D4E9D7]" : "bg-gray-100"}`}
-                                                            title={`${time} - ${isAvailable ? "参加可能" : "不明"}`}
+                                                            className={`w-14 h-6 border border-white ${bgColor}`}
+                                                            title={`${time} - ${title}`}
                                                         ></div>
                                                     )
                                                 })}
@@ -762,12 +776,16 @@ export default function ProjectPage() {
                             <button
                                 className="bg-[#E85A71] hover:bg-[#FF8FAB] text-white py-1 px-3 rounded"
                                 onClick={async () => {
-                                    const toMDFormat = (iso: string) => {
+                                    const toISOFormat = (iso: string) => {
                                         const d = new Date(iso)
-                                        return `${d.getMonth() + 1}/${d.getDate()}`
+                                        const y = d.getFullYear()
+                                        const m = String(d.getMonth() + 1).padStart(2, "0")
+                                        const day = String(d.getDate()).padStart(2, "0")
+                                        return `${y}-${m}-${day}`
                                     }
 
-                                    const formattedDates = tempSelectedDates.map(toMDFormat)
+                                    const formattedDates = tempSelectedDates.map(toISOFormat)
+
                                     const newDates = [...new Set([...project.dates, ...formattedDates])].sort()
 
                                     const { error } = await supabase
