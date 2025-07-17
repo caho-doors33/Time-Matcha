@@ -266,7 +266,8 @@ export default function CreateProjectPage() {
 
                 <div className="grid grid-cols-7 gap-1">
                   {calendarDays.map((item, index) => {
-                    const dateStr = `${month}/${item.day}`
+                    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(item.day).padStart(2, "0")}`
+
                     // month を2桁にしたいなら String(month).padStart(2, "0")
 
                     const isSelected = item.isCurrentMonth && selectedDates.includes(dateStr)
