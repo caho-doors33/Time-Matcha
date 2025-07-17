@@ -81,7 +81,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "http://localhost:3000/auth/callback" // 本番ならドメインに変える
+        redirectTo: "https://time-matcha.vercel.app/auth/callback" // 本番ならドメインに変える
       },
     })
   }
